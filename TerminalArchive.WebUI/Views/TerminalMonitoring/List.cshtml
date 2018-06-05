@@ -1,0 +1,21 @@
+﻿@using TerminalArchive.WebUI.Models
+@using TerminalArchive.WebUI.HtmlHelpers
+@model TerminalsListViewModel
+
+@{
+    ViewBag.Title = "Терминалы";
+}
+
+<div>
+    <table>
+        @foreach (var t in @Model.Terminals)
+        {
+            <tr><th>Название терминала</th><th>Номер группы</th><th>Группа</th><th>Адрес</th><th>Hasp id</th><th>Заказы</th></tr>
+            <tr><td>@t.Name</td><td>@t.GroupsIdsString</td><td>@t.GroupsNamesString</td><td>@t.Address</td><td>@t.IdHasp</td><td><a href='/Pages/TerminalInfo.aspx?idT=@t.Id'>Детально</a></td></tr>
+        }
+    </table>
+</div>
+
+<div>
+    @Html.PageLinks(Model.PagingInfo, x => Url.Action("List", new { page = x }))
+</div>
