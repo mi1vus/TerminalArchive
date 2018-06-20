@@ -1,0 +1,53 @@
+﻿@model TerminalArchive.WebUI.Models.UserRolesViewModel
+
+@{
+    ViewBag.Title = "UserRoles";
+}
+
+<h2>Роли пользователей</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <hr />
+        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+    <div class="form-horizontal">
+
+        <table class="table">
+            <tr>
+                <th>Польз.\Роли</th>
+            @foreach (var role in Model.Roles)
+            {
+                <th>@role.Name [@role.IdGroup]</th>
+            }
+            </tr>
+
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <th>@user.Name</th>
+                @foreach (var role in Model.Roles)
+                {
+                <td>
+                    <input type="checkbox"
+                           id="chk_@user.Id.ToString()_@role.Id.ToString()"
+                           name="chk_@user.Id.ToString()_@role.Id.ToString()"
+                           value="@(user.Roles.Any(r => r.Id == role.Id) ? "true" : "false")"
+                           @(user.Roles.Any(r => r.Id == role.Id) ? "checked" : "") />
+                </td>
+                }
+            </tr>
+        }
+
+        </table>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" name="submitButton" />
+            </div>
+        </div>
+
+    </div>
+
+}

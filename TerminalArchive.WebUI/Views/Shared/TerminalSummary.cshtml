@@ -1,0 +1,32 @@
+﻿@model TerminalArchive.WebUI.Models.ViewTerminal
+<tr>
+    <td scope="row">@Model.Name</td>
+    <td>@Model.GroupsIdsString</td>
+    <td>@Model.GroupsNamesString</td>
+    <td>@Model.Address</td>
+    <td>@Model.IdHasp</td>
+    <td>
+        @*@using (Html.BeginForm("Edit", "Terminal"))
+        {
+            <div class="pull-right">
+                @Html.HiddenFor(x => x.Id)
+                @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
+                <input type="submit" class="btn btn-success" value="Подробно" />
+            </div>
+        }*@
+        @Html.ActionLink("Детально", "Details", "Terminal",
+        new
+        {
+            id = Model.Id,
+            page = 1
+        },
+        new
+        {
+            @class = "btn btn-success"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        }
+        )
+   
+        @*<a href='/Pages/TerminalInfo.aspx?idT=@Model.Id'>Детально</a>*@
+    </td>
+</tr>

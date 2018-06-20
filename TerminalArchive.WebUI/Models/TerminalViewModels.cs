@@ -17,15 +17,22 @@ namespace TerminalArchive.WebUI.Models
             Name = terminal.Name;
             Address = terminal.Address;
             IdHasp = terminal.IdHasp;
+            IdGroup = terminal.IdGroup;
             Orders = terminal.Orders;
             Parameters = terminal.Parameters;
-            Groups = terminal.Groups;
+            Group = terminal.Group;
         }
     }
 
     public class TerminalsListViewModel
     {
         public IEnumerable<ViewTerminal> Terminals { get; set; }
+        public PagingInfo PagingInfo { get; set; }
+    }
+
+    public class TerminalDetailViewModel
+    {
+        public ViewTerminal Terminal { get; set; }
         public PagingInfo PagingInfo { get; set; }
     }
 }

@@ -1,0 +1,122 @@
+﻿@using TerminalArchive.WebUI.HtmlHelpers
+@model TerminalArchive.WebUI.Models.TerminalDetailViewModel
+
+@{
+    ViewBag.Title = "Детальная информация";
+}
+
+<h2>Edit</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        <h4>Терминал</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.Terminal.Id)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Terminal.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Terminal.Name, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Terminal.Name, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Terminal.Address, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Terminal.Address, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Terminal.Address, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Terminal.IdHasp, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Terminal.IdHasp, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Terminal.IdHasp, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+<table class="table table-bordered">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Id параметра</th>
+            <th scope="col">Терминал</th>
+            <th scope="col">Название</th>
+            <th scope="col">Путь</th>
+            <th scope="col">Значение</th>
+            <th scope="col">Сохранен</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var parametr in Model.Terminal.Parameters)
+        {
+            <tr>
+                <td scope="row">@parametr.Id</td>
+                <td>@parametr.TId</td>
+                <td>@parametr.Name</td>
+                <td>@parametr.Path</td>
+                <td>@parametr.Value</td>
+                <td>@parametr.Saved</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<table class="table table-bordered">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Id заказа</th>
+            <th scope="col">RNN</th>
+            <th scope="col">Статус заказа</th>
+            <th scope="col">Топливо</th>
+            <th scope="col">Тип оплаты</th>
+            <th scope="col">Цена до налива</th>
+            <th scope="col">Окончательная цена</th>
+            <th scope="col">Количество до налива</th>
+            <th scope="col">Окончательное количество</th>
+            <th scope="col">Сумма до налива</th>
+            <th scope="col">Окончательная сумма</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model.Terminal.Orders.Values)
+            {
+            <tr>
+                <td scope="row">@order.Id</td>
+                <td>@order.Rnn</td>
+                <td>@order.StateName</td>
+                <td>@order.FuelName</td>
+                <td>@order.PaymentName</td>
+                <td>@order.PrePrice</td>
+                <td>@order.Price</td>
+                <td>@order.PreQuantity</td>
+                <td>@order.Quantity</td>
+                <td>@order.PreSumm</td>
+                <td>@order.Summ</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div class="btn-group pull-right">
+    @Html.PageLinks(Model.PagingInfo, x => Url.Action("Edit", new { page = x }))
+</div>
+
+
+@*
+<div>
+    @Html.ActionLink("Back to List", "Add")
+</div>
+*@

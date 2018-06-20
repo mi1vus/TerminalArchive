@@ -1,0 +1,21 @@
+﻿@model IEnumerable<MenuInfo>
+@using TerminalArchive.WebUI.Models;
+
+@*@Html.ActionLink("Домой", "List", "TerminalMonitoring", null,
+    new { @class = "btn btn-block btn-default btn-lg" })*@
+
+@foreach (var menu in Model)
+{
+    @Html.RouteLink(menu.Text, new
+    {
+        controller = menu.Controller,
+        action = menu.Action,
+        page = 1
+    },
+    new
+    {
+        @class = "btn btn-block btn-default btn-lg"
+        + (menu.Controller == ViewBag.CurrentController ? " btn-primary" : "")
+    }
+    )
+}

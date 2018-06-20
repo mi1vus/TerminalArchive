@@ -8,14 +8,19 @@ namespace TerminalArchive.Domain.Models
     {
         public int Id { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите имя терминала!")]
+        [Display(Name = "Имя")]
         public string Name { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите адрес терминала!")]
+        [Display(Name = "Адрес")]
         public string Address { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите код терминала!")]
+        [Display(Name = "Hasp уникальный номер")]
         public string IdHasp { get; set; }
+        [Display(Name = "Принадлежность к группе терминалов")]
+        public int IdGroup { get; set; }
         public Dictionary<int, Order> Orders { get; set; }
         public List<Parameter> Parameters { get; set; }
-        public Dictionary<int, Group> Groups { get; set; }
+        public Group Group { get; set; }
     }
 
     public class TerminalGroup
@@ -63,6 +68,7 @@ namespace TerminalArchive.Domain.Models
         public string Value { get; set; }
         public DateTime LastEditTime { get; set; }
         public DateTime SaveTime { get; set; }
+        public bool Saved => SaveTime >= LastEditTime;
     }
 
     public class Group

@@ -7,5 +7,6 @@ namespace TerminalArchive.Domain.Abstract
     {
         string UserName { get; set; }
         IEnumerable<Terminal> Terminals { get; }
+        Terminal GetTerminal(int id, int orderPage, int orderPageSize);
     }
 }

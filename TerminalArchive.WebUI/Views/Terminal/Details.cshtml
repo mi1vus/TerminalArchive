@@ -1,0 +1,95 @@
+﻿@using TerminalArchive.WebUI.HtmlHelpers
+@model TerminalArchive.WebUI.Models.TerminalDetailViewModel
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<div class="well">
+    <h2>Детальные данные</h2>
+    <h4>Терминал</h4>
+    <hr />
+    <dl class="dl-horizontal">
+    </dl>
+    <div>
+        <h3>
+            <strong>@Model.Terminal.Name</strong>
+            <span class="pull-right label label-primary">@Model.Terminal.IdHasp</span>
+        </h3>
+
+        <p>
+            @Html.ActionLink("Edit", "Edit", new { id = Model.Terminal.Id, page = Model.PagingInfo.CurrentPage }) |
+        </p>
+
+        <span class="lead">@Model.Terminal.Address</span><br/>
+        <span class="lead">@Model.Terminal.GroupsIdsString</span><br/>
+        <span class="lead">@Model.Terminal.GroupsNamesString</span><br/>
+        <span class="lead">@Model.Terminal.GroupsNamesString</span><br />
+
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col" class="w-25">Id параметра</th>
+                    <th scope="col" class="w-25">Терминал</th>
+                    <th scope="col" class="w-25">Название</th>
+                    <th scope="col" class="w-25">Путь</th>
+                    <th scope="col" class="w-25">Значение</th>
+                    <th scope="col" class="w-25">Сохранен</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var parametr in Model.Terminal.Parameters)
+            {
+                    <tr>
+                        <td scope="row" class="w-25">@parametr.Id</td>
+                        <td class="w-25">@parametr.TId</td>
+                        <td class="w-25">@parametr.Name</td>
+                        <td class="w-25">@parametr.Path</td>
+                        <td class="w-25">@parametr.Value</td>
+                        <td class="w-25">@parametr.Saved</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr class="d-flex">
+                    <th scope="col" class="w-25">Id заказа</th>
+                    <th scope="col" class="w-25">RNN</th>
+                    <th scope="col" class="w-25">Статус заказа</th>
+                    <th scope="col" class="w-25">Топливо</th>
+                    <th scope="col" class="w-25">Тип оплаты</th>
+                    <th scope="col" class="w-25">Цена до налива</th>
+                    <th scope="col" class="w-25">Окончательная цена</th>
+                    <th scope="col" class="w-25">Количество до налива</th>
+                    <th scope="col" class="w-25">Окончательное количество</th>
+                    <th scope="col" class="w-25">Сумма до налива</th>
+                    <th scope="col" class="w-25">Окончательная сумма</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model.Terminal.Orders.Values)
+                {
+                    <tr class="d-flex">
+                        <td scope="row" class="w-25">@order.Id</td>
+                        <td class="w-25">@order.Rnn</td>
+                        <td class="w-25">@order.StateName</td>
+                        <td class="w-25">@order.FuelName</td>
+                        <td class="w-25">@order.PaymentName</td>
+                        <td class="w-25">@order.PrePrice</td>
+                        <td class="w-25">@order.Price</td>
+                        <td class="w-25">@order.PreQuantity</td>
+                        <td class="w-25">@order.Quantity</td>
+                        <td class="w-25">@order.PreSumm</td>
+                        <td class="w-25">@order.Summ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="btn-group pull-right">
+            @Html.PageLinks(Model.PagingInfo, x => Url.Action("Details", new { page = x }))
+        </div> 
+   </div>
+</div>

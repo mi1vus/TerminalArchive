@@ -22,11 +22,11 @@ namespace TerminalArchive.UnitTests
             Mock<ITerminalRepository> mock = new Mock<ITerminalRepository>();
             mock.Setup(m => m.Terminals).Returns(new List<Terminal>
             {
-                new Terminal { Id = 1, Name = "Терм1", Address = "Аддр1", IdHasp = "1", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 2, Name = "Терм2", Address = "Аддр2", IdHasp = "2", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 3, Name = "Терм3", Address = "Аддр3", IdHasp = "3", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 4, Name = "Терм4", Address = "Аддр4", IdHasp = "4", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 5, Name = "Терм5", Address = "Аддр5", IdHasp = "5", Groups = new Dictionary<int, Group>()}
+                new Terminal { Id = 1, Name = "Терм1", Address = "Аддр1", IdHasp = "1", Group = new Group()},
+                new Terminal { Id = 2, Name = "Терм2", Address = "Аддр2", IdHasp = "2", Group = new Group()},
+                new Terminal { Id = 3, Name = "Терм3", Address = "Аддр3", IdHasp = "3", Group = new Group()},
+                new Terminal { Id = 4, Name = "Терм4", Address = "Аддр4", IdHasp = "4", Group = new Group()},
+                new Terminal { Id = 5, Name = "Терм5", Address = "Аддр5", IdHasp = "5", Group = new Group()}
             });
             TerminalMonitoringController controller = new TerminalMonitoringController(mock.Object);
             controller.PageSize = 3;
@@ -77,11 +77,11 @@ namespace TerminalArchive.UnitTests
             Mock<ITerminalRepository> mock = new Mock<ITerminalRepository>();
             mock.Setup(m => m.Terminals).Returns(new List<Terminal>
             {
-                new Terminal { Id = 1, Name = "Терм1", Address = "Аддр1", IdHasp = "1", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 2, Name = "Терм2", Address = "Аддр2", IdHasp = "2", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 3, Name = "Терм3", Address = "Аддр3", IdHasp = "3", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 4, Name = "Терм4", Address = "Аддр4", IdHasp = "4", Groups = new Dictionary<int, Group>()},
-                new Terminal { Id = 5, Name = "Терм5", Address = "Аддр5", IdHasp = "5", Groups = new Dictionary<int, Group>()}
+                new Terminal { Id = 1, Name = "Терм1", Address = "Аддр1", IdHasp = "1", Group = new Group()},
+                new Terminal { Id = 2, Name = "Терм2", Address = "Аддр2", IdHasp = "2", Group = new Group()},
+                new Terminal { Id = 3, Name = "Терм3", Address = "Аддр3", IdHasp = "3", Group = new Group()},
+                new Terminal { Id = 4, Name = "Терм4", Address = "Аддр4", IdHasp = "4", Group = new Group()},
+                new Terminal { Id = 5, Name = "Терм5", Address = "Аддр5", IdHasp = "5", Group = new Group()}
             });
             TerminalMonitoringController controller = new TerminalMonitoringController(mock.Object);
             controller.PageSize = 3;

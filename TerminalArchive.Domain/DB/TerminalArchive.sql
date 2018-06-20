@@ -1,6 +1,7 @@
 ﻿CREATE SCHEMA IF NOT EXISTS `terminal_archive` ;
 
 DROP TABLE IF EXISTS `terminal_archive`.`history`;
+DROP TABLE IF EXISTS `terminal_archive`.`user_roles`;
 DROP TABLE IF EXISTS `terminal_archive`.`users`;
 DROP TABLE IF EXISTS `terminal_archive`.`role_rights`;
 DROP TABLE IF EXISTS `terminal_archive`.`rights`;
@@ -13,7 +14,6 @@ DROP TABLE IF EXISTS `terminal_archive`.`order_payment_types`;
 DROP TABLE IF EXISTS `terminal_archive`.`order_fuels`;
 DROP TABLE IF EXISTS `terminal_archive`.`terminal_parameters`;
 DROP TABLE IF EXISTS `terminal_archive`.`parameters`;
-DROP TABLE IF EXISTS `terminal_archive`.`terminal_groups`;
 DROP TABLE IF EXISTS `terminal_archive`.`terminals`;
 DROP TABLE IF EXISTS `terminal_archive`.`groups`;
 
@@ -27,22 +27,14 @@ CREATE TABLE IF NOT EXISTS `terminal_archive`.`groups` (
 CREATE TABLE IF NOT EXISTS `terminal_archive`.`terminals` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `id_hasp` VARCHAR(50) NOT NULL,
+  `id_group` INT NULL,
   `address` VARCHAR(100) NOT NULL,
   `name` VARCHAR(50) NOT NULL,
   `delete` BOOLEAN NOT NULL DEFAULT false,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `id_hasp_UNIQUE` (`id_hasp` ASC)
-);  
-
-CREATE TABLE IF NOT EXISTS `terminal_archive`.`terminal_groups` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `id_terminal` INT NOT NULL,
-  `id_group` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `terminal_groups_UNIQUE` (`id_terminal` ASC,`id_group` ASC),
-  FOREIGN KEY (`id_terminal`) REFERENCES `terminal_archive`.`terminals`(`id`),
+  UNIQUE INDEX `id_hasp_UNIQUE` (`id_hasp` ASC),
   FOREIGN KEY (`id_group`) REFERENCES `terminal_archive`.`groups`(`id`)
-);
+);  
 
 CREATE TABLE IF NOT EXISTS `terminal_archive`.`parameters` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -154,13 +146,21 @@ CREATE TABLE IF NOT EXISTS `terminal_archive`.`role_rights` (
 
 CREATE TABLE IF NOT EXISTS `terminal_archive`.`users` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `id_role` INT NOT NULL,
   `name` VARCHAR(150) NOT NULL,
   `pass` VARCHAR(32) NOT NULL,
   `delete` BOOLEAN NOT NULL DEFAULT false,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `users_name_UNIQUE` (`name`  ASC),
-  FOREIGN KEY (`id_role`) REFERENCES `terminal_archive`.`roles`(`id`)
+  UNIQUE INDEX `users_name_UNIQUE` (`name`  ASC)
+);
+
+CREATE TABLE IF NOT EXISTS `terminal_archive`.`user_roles` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `id_role` INT NOT NULL,
+  `id_user` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `user_roles_UNIQUE` (`id_role` ASC,`id_user` ASC),
+  FOREIGN KEY (`id_role`) REFERENCES `terminal_archive`.`roles`(`id`),
+  FOREIGN KEY (`id_user`) REFERENCES `terminal_archive`.`users`(`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `terminal_archive`.`history` (
@@ -179,24 +179,16 @@ CREATE TABLE IF NOT EXISTS `terminal_archive`.`history` (
 );
 
 INSERT INTO `terminal_archive`.`groups` (`id`,`name`) VALUES 
-('1', 'Тестовая'),
+('1', 'Тестовая1'),
 ('2', 'Тестовая2'),
-('3', 'Объединение 1 и 2');
+('3', 'Тестовая3');
 
-INSERT INTO `terminal_archive`.`terminals` (`id`,`id_hasp`, `address`, `name`) VALUES 
-('1', '306061827', 'Исследователей, 15', 'Тестовый1'),
-('2', '306061828', 'Онуфриева, 55', 'Тестовый2'),
-('3', '306061829', 'Волгоградская, 50', 'Тестовый3'),
-('4', '306061830', 'Рябинина, 19', 'Тестовый4');
-
-INSERT INTO `terminal_archive`.`terminal_groups` (`id`,`id_terminal`,`id_group`) VALUES 
-('1', '1', '1'),
-('2', '2', '1'),
-('3', '3', '2'),
-('4', '4', '2'),
-('5', '1', '3'),
-('6', '2', '3'),
-('7', '3', '3');
+INSERT INTO `terminal_archive`.`terminals` (`id`,`id_hasp`, `id_group`, `address`, `name`) VALUES 
+('1', '306061827', '1', 'Исследователей, 15', 'Тестовый1'),
+('2', '306061828', '2', 'Онуфриева, 55', 'Тестовый2'),
+('3', '306061829', '1', 'Волгоградская, 50', 'Тестовый3'),
+('4', '306061830', '2', 'Озерная, 250', 'Тестовый4'),
+('5', '306061831', '3', 'Рябинина, 19', 'Тестовый5');
 
 INSERT INTO `terminal_archive`.`parameters` (`id`, `path`, `name`, `description`) VALUES 
 ('1', 'ASU_Z_Driver', 'tid', 'идентификатор терминала'),
@@ -264,7 +256,7 @@ INSERT INTO `terminal_archive`.`roles` ( `id`, `id_group`, `name`) VALUES
 ('3', '2', 'Редакторы 2 группы'),
 ('4', null, 'Читатели'),
 ('5', null, 'Забаненные'),
-('6', '3', 'Читатели 1 и 2 группы');
+('6', '3', 'Редакторы 3 группы');
 
 INSERT INTO `terminal_archive`.`role_rights` (`id`, `id_role`, `id_right`) VALUES 
 ('1', '1', '2'),
@@ -274,14 +266,24 @@ INSERT INTO `terminal_archive`.`role_rights` (`id`, `id_role`, `id_right`) VALUE
 ('5', '3', '3'),
 ('6', '4', '2'),
 ('7', '5', '1'),
-('8', '6', '2');
+('8', '6', '2'),
+('9', '6', '3');
 
-INSERT INTO `terminal_archive`.`users` (`id`, `id_role`, `name`, `pass`) VALUES 
-('1', '1', 'Admin', '81dc9bdb52d04dc20036dbd8313ed055'),
-('2', '3', 'Max', '81dc9bdb52d04dc20036dbd8313ed055'),
-('3', '4', 'Lisa', '81dc9bdb52d04dc20036dbd8313ed055'),
-('4', '5', 'John', '81dc9bdb52d04dc20036dbd8313ed055'),
-('5', '6', 'Doug', '81dc9bdb52d04dc20036dbd8313ed055');
+INSERT INTO `terminal_archive`.`users` (`id`, `name`, `pass`) VALUES 
+('1', 'Admin', '81dc9bdb52d04dc20036dbd8313ed055'),
+('2', 'Max', '81dc9bdb52d04dc20036dbd8313ed055'),
+('3', 'Lisa', '81dc9bdb52d04dc20036dbd8313ed055'),
+('4', 'John', '81dc9bdb52d04dc20036dbd8313ed055'),
+('5', 'Doug', '81dc9bdb52d04dc20036dbd8313ed055');
+
+INSERT INTO `terminal_archive`.`user_roles` (`id`,`id_user`,`id_role`) VALUES 
+('1', '1', '1'),
+('2', '2', '2'),
+('3', '2', '3'),
+('4', '3', '3'),
+('5', '3', '4'),
+('6', '4', '5'),
+('7', '5', '6');
 
 INSERT INTO `terminal_archive`.`history` (`id`, `date`, `id_terminal`, `id_order`, `id_state`, `trace`, `msg`) VALUES
 ('1', '2018-05-18 18:37:37', '1', '13', '2', NULL, 'заказ изменен'),

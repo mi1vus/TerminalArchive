@@ -12,14 +12,21 @@ namespace TerminalArchive.Domain.DB
     {
         public string UserName { get; set; }
 
-        public IEnumerable<Terminal> Terminals {
-            get
-            {
-                if (DbHelper.UpdateTerminals(UserName, 1, int.MaxValue, true))
-                    return DbHelper.Terminals.Values;
-                else
-                    return null;
-            }
+        public IEnumerable<Terminal> Terminals => 
+            DbHelper.UpdateTerminals(UserName, 1, int.MaxValue, true) ? DbHelper.Terminals.Values : null;
+
+        public Terminal GetTerminal(int id, int orderPage, int orderPageSize)
+        {
+            if (DbHelper.Terminals.All(t => t.Key != id))
+                DbHelper.UpdateTerminals(UserName, 1, int.MaxValue, true);
+
+            if (DbHelper.Terminals.All(t => t.Key != id))
+                return null;
+
+            DbHelper.UpdateTerminalOrders(UserName, id, orderPage, orderPageSize);
+            DbHelper.UpdateTerminalParameters(UserName, id);
+
+            return DbHelper.Terminals[id];
         }
     }
 }

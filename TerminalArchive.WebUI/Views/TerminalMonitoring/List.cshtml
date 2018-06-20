@@ -4,18 +4,31 @@
 
 @{
     ViewBag.Title = "Терминалы";
+    ViewBag.User = User?.Identity?.Name;
 }
 
-<div>
-    <table>
+<div class="well">
+    <table class="table table-bordered">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Название терминала</th>
+            <th scope="col">Номер группы</th>
+            <th scope="col">Группа</th>
+            <th scope="col">Адрес</th>
+            <th scope="col">Hasp id</th>
+            <th scope="col">Заказы</th>
+        </tr>
+        </thead>
+        <tbody>
         @foreach (var t in @Model.Terminals)
         {
-            <tr><th>Название терминала</th><th>Номер группы</th><th>Группа</th><th>Адрес</th><th>Hasp id</th><th>Заказы</th></tr>
-            <tr><td>@t.Name</td><td>@t.GroupsIdsString</td><td>@t.GroupsNamesString</td><td>@t.Address</td><td>@t.IdHasp</td><td><a href='/Pages/TerminalInfo.aspx?idT=@t.Id'>Детально</a></td></tr>
+            @Html.Partial("TerminalSummary", t)
         }
+        </tbody>
     </table>
+
+    <div class="btn-group pull-right">
+        @Html.PageLinks(Model.PagingInfo, x => Url.Action("List", new { page = x }))
+    </div>
 </div>
 
-<div>
-    @Html.PageLinks(Model.PagingInfo, x => Url.Action("List", new { page = x }))
-</div>
