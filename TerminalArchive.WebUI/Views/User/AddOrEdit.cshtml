@@ -1,19 +1,19 @@
 ﻿@model TerminalArchive.Domain.Models.User
 
 @{
-    ViewBag.Title = "AddOrEdit";
+    ViewBag.Title = "Редактирование";
 }
 
-<h2>AddOrEdit</h2>
+<h2>Редактирование</h2>
 
 @using (Html.BeginForm())
 {
     @Html.AntiForgeryToken()
     
     <div class="form-horizontal">
-        <h4>User</h4>
+        <h4>Пользователь</h4>
         <hr />
-        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
         @*@Html.HiddenFor(model => model.Id)
 
         <div class="form-group">
@@ -96,15 +96,16 @@
                         <label>@(property.DisplayName ?? property.PropertyName)</label>
                         <div class="col-md-10">
                             @{
-                                var roles = Model.Roles.Select(r=>r.Name).Aggregate((current, next) => current + ", " + next);
+                                var roles = Model.Roles != null && Model.Roles.Any() ? Model.Roles.Select(r=>r.Name).Aggregate((current, next) => current + ", " + next):" - ";
                             }
                             @Html.Label(roles, null, new {@class = "form-control"})
                         </div>
                     </div>
-            }
-            else
-            if (property.PropertyName != "OldPass")
-            {
+                                }
+                                else
+            if (property.PropertyName != "OldPass" &&
+                property.PropertyName != "Roles")
+                                {
                 <div class="form-group">
                     <label>@(property.DisplayName ?? property.PropertyName)</label>
                     <div class="col-md-10">
@@ -117,7 +118,7 @@
 
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Save" class="btn btn-default" />
+                <input type="submit" value="Сохранить" class="btn btn-default" />
             </div>
         </div>
     </div>

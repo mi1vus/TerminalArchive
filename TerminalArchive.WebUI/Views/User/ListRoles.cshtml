@@ -1,0 +1,38 @@
+﻿@model IEnumerable<TerminalArchive.Domain.Models.Role>
+
+@{
+    ViewBag.Title = "Роли";
+}
+
+<h2>Роли</h2>
+
+<p>
+    @Html.ActionLink("Новая роль", "AddOrEditRole")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.IdGroup)
+        </th>
+        <th>Редактировать</th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.IdGroup)
+        </td>
+        <td>
+            @Html.ActionLink("Редактировать", "AddOrEditRole", new { id = item.Id })
+        </td>
+
+    </tr>
+}
+
+</table>

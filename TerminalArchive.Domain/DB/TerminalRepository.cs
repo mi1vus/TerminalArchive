@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using TerminalArchive.Domain.Abstract;
 using TerminalArchive.Domain.Models;
 
@@ -13,20 +9,18 @@ namespace TerminalArchive.Domain.DB
         public string UserName { get; set; }
 
         public IEnumerable<Terminal> Terminals => 
-            DbHelper.UpdateTerminals(UserName, 1, int.MaxValue, true) ? DbHelper.Terminals.Values : null;
+            DbHelper.GetTerminals(UserName, 1, int.MaxValue, true).Values;
 
         public Terminal GetTerminal(int id, int orderPage, int orderPageSize)
         {
-            if (DbHelper.Terminals.All(t => t.Key != id))
-                DbHelper.UpdateTerminals(UserName, 1, int.MaxValue, true);
-
-            if (DbHelper.Terminals.All(t => t.Key != id))
+            var terminal = DbHelper.GetTerminal(id, UserName);
+            if (terminal == null)
                 return null;
 
-            DbHelper.UpdateTerminalOrders(UserName, id, orderPage, orderPageSize);
-            DbHelper.UpdateTerminalParameters(UserName, id);
+            terminal.Orders = DbHelper.GetTerminalOrders(UserName, id, orderPage, orderPageSize);
+            terminal.Parameters = DbHelper.GetTerminalParameters(UserName, id);
 
-            return DbHelper.Terminals[id];
+            return terminal;
         }
     }
 }

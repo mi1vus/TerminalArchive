@@ -1,13 +1,13 @@
 ﻿@model IEnumerable<TerminalArchive.Domain.Models.User>
 
 @{
-    ViewBag.Title = "List";
+    ViewBag.Title = "Пользователи";
 }
 
-<h2>List</h2>
+<h2>Пользователи</h2>
 
 <p>
-    @Html.ActionLink("Create New", "AddOrEdit")
+    @Html.ActionLink("Создать пользователя", "AddOrEdit")
 </p>
 <table class="table">
     <tr>
@@ -17,7 +17,7 @@
         @*<th>
             @Html.DisplayNameFor(model => model.Pass)
         </th>*@
-        <th></th>
+        <th>Редактировать</th>
     </tr>
 
 @foreach (var item in Model) {
@@ -29,7 +29,7 @@
             @Html.DisplayFor(modelItem => item.Pass)
         </td>*@
         <td>
-            @Html.ActionLink("Edit", "AddOrEdit", new { id=item.Id }) |
+            @Html.ActionLink("Редактировать", "AddOrEdit", new { id=item.Id })
         </td>
     </tr>
 }

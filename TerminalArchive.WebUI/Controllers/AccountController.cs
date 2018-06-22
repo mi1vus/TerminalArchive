@@ -38,10 +38,10 @@ namespace TerminalArchive.WebUI.Controllers
         [HttpPost]
         public ActionResult Logout()
         {
-            if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Logout")
-            {
+            //if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Выйти")
+            //{
                 FormsAuthentication.SignOut();
-            }
+            //}
 
             var url = Request["ReturnUrl"];
             return Redirect(url ?? Url.Action("List", "TerminalMonitoring"));

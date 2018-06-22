@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TerminalArchive.Domain.Models
 {
@@ -18,6 +14,7 @@ namespace TerminalArchive.Domain.Models
         public string Pass { get; set; }
         [Display(Name = "Старый пароль")]
         public string OldPass { get; set; }
+        [Display(Name = "Роли")]
         public List<Role> Roles { get; set; }
     }
 
@@ -35,6 +32,7 @@ namespace TerminalArchive.Domain.Models
         [Required(ErrorMessage = "Пожалуйста введите имя роли!")]
         [Display(Name = "Имя")]
         public string Name { get; set; }
+        [Display(Name = "Права")]
         public List<Right> Rights { get; set; }
     }
     public class Right
@@ -43,6 +41,11 @@ namespace TerminalArchive.Domain.Models
         [Required(ErrorMessage = "Пожалуйста введите имя права!")]
         [Display(Name = "Имя")]
         public string Name { get; set; }
+    }
+    public class RoleRight
+    {
+        public int IdRole { get; set; }
+        public int IdRight { get; set; }
     }
 
 }

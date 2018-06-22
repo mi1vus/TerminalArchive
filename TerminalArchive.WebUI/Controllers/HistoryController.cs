@@ -5,9 +5,6 @@ namespace TerminalArchive.WebUI.Controllers
 {
     public class HistoryController : Controller
     {
-        public HistoryController()
-        {
-        }
 
         [HttpPost]
         public bool AddHistory(

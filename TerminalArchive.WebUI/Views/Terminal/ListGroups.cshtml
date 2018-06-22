@@ -1,0 +1,31 @@
+﻿@model IEnumerable<TerminalArchive.Domain.Models.Group>
+
+@{
+    ViewBag.Title = "Группы";
+}
+
+<h2>Группы</h2>
+
+<p>
+    @Html.ActionLink("Новая группа", "AddOrEditGroup")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th>Редактирование</th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Name)
+        </td>
+        <td>
+            @Html.ActionLink("Редактировать", "AddOrEditGroup", new { id=item.Id })
+        </td>
+    </tr>
+}
+
+</table>

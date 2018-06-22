@@ -14,10 +14,10 @@ namespace TerminalArchive.Domain.DB
         private static readonly string ConnStr /*= "server=localhost;user=MYSQL;database=terminal_archive;password=tt2QeYy2pcjNyBm6AENp;"*/;
         //private static string _connStrTest = "server=localhost;user=MYSQL;database=products;password=tt2QeYy2pcjNyBm6AENp;";
 
-        public static Dictionary<int, Terminal> Terminals = new Dictionary<int, Terminal>();
-        public static List<Group> Groups = new List<Group>();
-        public static Dictionary<int, User> Users = new Dictionary<int, User>();
-        public static Dictionary<int, Role> Roles = new Dictionary<int, Role>();
+        //public static Dictionary<int, Terminal> Terminals = new Dictionary<int, Terminal>();
+        //public static List<Group> Groups = new ListUser<Group>();
+        //public static Dictionary<int, User> Users = new Dictionary<int, User>();
+        //public static Dictionary<int, Role> Roles = new Dictionary<int, Role>();
 
         static DbHelper()
         {
@@ -39,7 +39,7 @@ namespace TerminalArchive.Domain.DB
             var conn = contextConn ?? new MySqlConnection(ConnStr);
             try
             {
-                var sql = "";
+                string sql;
                 using (var md5Hash = MD5.Create())
                 {
                     var data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
@@ -51,14 +51,19 @@ namespace TerminalArchive.Domain.DB
                     var hash = sBuilder.ToString();
 
                     sql =
-                        $" SELECT COUNT(id) FROM terminal_archive.users AS u WHERE u.name = '{name}' AND u.pass = '{hash}'; ";
+$@" SELECT MIN(rg.name not like 'None') FROM terminal_archive.users AS u
+ LEFT JOIN terminal_archive.user_roles AS ur ON u.id = ur.id_user 
+ LEFT JOIN terminal_archive.roles AS rl ON ur.id_role = rl.id
+ LEFT JOIN terminal_archive.role_rights AS rr ON rr.id_role = rl.id
+ LEFT JOIN terminal_archive.rights AS rg ON rr.id_right = rg.id
+ WHERE u.name = '{name}' AND u.pass = '{hash}' ; ";
                 }
                 if (contextConn == null)
                     conn.Open();
                 var countCommand = new MySqlCommand(sql, conn);
 
                 var dataReader = countCommand.ExecuteReader();
-                while (dataReader.HasRows && dataReader.Read())
+                while (dataReader.HasRows && dataReader.Read() && !dataReader.IsDBNull(0))
                 {
                     users = dataReader.GetInt32(0);
                 }
@@ -87,7 +92,7 @@ namespace TerminalArchive.Domain.DB
  LEFT JOIN terminal_archive.roles AS rl ON ur.id_role = rl.id
  LEFT JOIN terminal_archive.role_rights AS rr ON rr.id_role = rl.id
  LEFT JOIN terminal_archive.rights AS rg ON rr.id_right = rg.id
- WHERE u.name = '{name}' AND rg.name = '{role}' AND rl.id_group {groupToQuery}; ";
+ WHERE u.name = '{name}' AND rg.name = '{role}' AND rl.id_group {groupToQuery} AND rg.name <> 'None' ; ";
                 var conn = contextConn ?? new MySqlConnection(ConnStr);
                 if (contextConn == null)
                     conn.Open();
@@ -115,15 +120,15 @@ namespace TerminalArchive.Domain.DB
 
         public static bool UserIsAdmin(string name, MySqlConnection contextConn = null)
         {
-            //var groups = UserTerminalGroup(name, "Read", contextConn);
-            //groups.AddRange(UserTerminalGroup(name, "Write", contextConn));
+            //var groups = GetUserGroups(name, "Read", contextConn);
+            //groups.AddRange(GetUserGroups(name, "Write", contextConn));
             if (!UserInRole(name, "Write", null, contextConn) || !UserInRole(name, "Read", null, contextConn) /*|| (groups != null && groups.Any())*/)
                 return false;
 
             return true;
         }
 
-        public static List<Group> UserTerminalGroup(string name, string right, MySqlConnection contextConn = null)
+        public static List<Group> GetUserGroups(string name, string right, MySqlConnection contextConn = null)
         {
             var result = new List<Group>();
             if (string.IsNullOrWhiteSpace(name))
@@ -166,9 +171,53 @@ WHERE u.name = '{name}' AND rg.name = '{right}'; ";
             return result;
         }
 
-        public static bool UpdateAllUsers(string user)
+        public static List<Group> GetAllGroups(string user)
         {
-            bool result = false;
+            var allGroups = new List<Group>();
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                var groups = GetUserGroups(user, "Read", conn);
+
+                string sql =
+@" SELECT g.`id`, g.name
+ FROM terminal_archive.groups AS g ";
+                if (groups != null && groups.Any())
+                {
+                    var groupStr = groups.Select(t => t.Id.ToString())
+                        .Aggregate((current, next) => current + ", " + next);
+
+                    sql +=
+$@" WHERE g.id in ( {groupStr} ) ";
+                }
+                sql +=
+@" ORDER BY g.id asc; ";
+                MySqlCommand command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    allGroups.Add(new Group()
+                    {
+                        Id = dataReader.GetInt32(0),
+                        Name = dataReader.GetString(1),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return allGroups;
+        }
+
+        public static Dictionary<int, User> GetAllUsers(string user)
+        {
+            var users = new Dictionary<int, User>();
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -177,21 +226,19 @@ WHERE u.name = '{name}' AND rg.name = '{right}'; ";
                 if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
-                string sql =
-$@" SELECT u.`id`, u.`name`, r.`id`, r.`name`, r.`id_group`
+                const string sql = @" SELECT u.`id`, u.`name`, r.`id`, r.`name`, r.`id_group`
  FROM terminal_archive.users AS u
  LEFT JOIN terminal_archive.user_roles AS ur ON ur.id_user = u.id
  LEFT JOIN terminal_archive.roles AS r ON ur.id_role = r.id
  ORDER BY u.id asc; ";
-                MySqlCommand command = new MySqlCommand(sql, conn);
+                var command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
-                Users.Clear();
                 while (dataReader.HasRows && dataReader.Read())
                 {
                     var idUser = dataReader.GetInt32(0);
-                    if (!Users.ContainsKey(idUser))
+                    if (!users.ContainsKey(idUser))
                     {
-                        Users[idUser] = new User
+                        users[idUser] = new User
                         {
                             Id = idUser,
                             Name = dataReader.GetString(1),
@@ -202,29 +249,27 @@ $@" SELECT u.`id`, u.`name`, r.`id`, r.`name`, r.`id_group`
                     if (dataReader.IsDBNull(2)) continue;
 
                     var rId = dataReader.GetInt32(2);
-                    Users[idUser].Roles .Add( new Role
+                    users[idUser].Roles .Add( new Role
                     {
                         Id = rId,
                         Name = dataReader.GetString(3),
                         IdGroup = dataReader.IsDBNull(4) ? null: (int?)dataReader.GetInt32(4),
                     });
                 }
-                result = true;
             }
             catch (Exception ex)
             {
-                result = false;
             }
             finally
             {
                 conn.Close();
             }
-            return result;
+            return users;
         }
 
-        public static bool UpdateAllRoles(string user)
+        public static Dictionary<int, Role> GetAllRoles(string user)
         {
-            bool result = false;
+            var roles = new Dictionary<int, Role>();
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -233,21 +278,19 @@ $@" SELECT u.`id`, u.`name`, r.`id`, r.`name`, r.`id_group`
                 if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
-                string sql =
-$@" SELECT r.`id`, r.`name`, r.`id_group`, rg.`id`, rg.`name`
+                const string sql = @" SELECT r.`id`, r.`name`, r.`id_group`, rg.`id`, rg.`name`
  FROM terminal_archive.roles AS r
  LEFT JOIN terminal_archive.role_rights AS rr ON rr.id_role = r.id
  LEFT JOIN terminal_archive.rights AS rg ON rr.id_right = rg.id
  ORDER BY r.id asc; ";
                 MySqlCommand command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
-                Roles.Clear();
                 while (dataReader.HasRows && dataReader.Read())
                 {
                     var idRole = dataReader.GetInt32(0);
-                    if (!Roles.ContainsKey(idRole))
+                    if (!roles.ContainsKey(idRole))
                     {
-                        Roles[idRole] = new Role
+                        roles[idRole] = new Role
                         {
                             Id = idRole,
                             Name = dataReader.GetString(1),
@@ -259,23 +302,58 @@ $@" SELECT r.`id`, r.`name`, r.`id_group`, rg.`id`, rg.`name`
                     if (dataReader.IsDBNull(3)) continue;
 
                     var rId = dataReader.GetInt32(3);
-                    Roles[idRole].Rights.Add(new Right
+                    roles[idRole].Rights.Add(new Right
                     {
                         Id = rId,
                         Name = dataReader.GetString(4),
                     });
                 }
-                result = true;
             }
             catch (Exception ex)
             {
-                result = false;
             }
             finally
             {
                 conn.Close();
             }
-            return result;
+            return roles;
+        }
+
+        public static List<Right> GetAllRights(string user)
+        {
+            var rights = new List<Right>();
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                const string sql =
+@" SELECT rg.`id`, rg.`name`
+ FROM terminal_archive.rights AS rg
+ ORDER BY rg.id asc; ";
+                MySqlCommand command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    var idRight = dataReader.GetInt32(0);
+                    rights.Add(new Right
+                    {
+                        Id = idRight,
+                        Name = dataReader.GetString(1),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return rights;
         }
 
         public static bool AddUser(
@@ -283,7 +361,7 @@ $@" SELECT r.`id`, r.`name`, r.`id_group`, rg.`id`, rg.`name`
             string user/*, string pass*/
         )
         {
-            var result = 0;
+            int result;
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -304,7 +382,7 @@ $@" SELECT u.id FROM terminal_archive.users AS u
 
                 if (userCnt > 0)
                     throw new Exception("User already exist!");
-                string password = string.Empty;
+                string password;
                 using (var md5Hash = MD5.Create())
                 {
                     var data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(pass));
@@ -316,10 +394,9 @@ $@" SELECT u.id FROM terminal_archive.users AS u
                     password = sBuilder.ToString();
                 }
 
-                string addSql = string.Format(
-@" INSERT INTO `terminal_archive`.`users`
+                string addSql = $@" INSERT INTO `terminal_archive`.`users`
 (`name`, `pass`) 
-VALUES ('{0}', '{1}'); ", name, password);
+VALUES ('{name}', '{password}'); ";
 
                 var addCommand = new MySqlCommand(addSql, conn);
                 result = addCommand.ExecuteNonQuery();
@@ -340,7 +417,7 @@ VALUES ('{0}', '{1}'); ", name, password);
             string user/*, string pass*/
         )
         {
-            var result = 0;
+            int result;
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -352,7 +429,7 @@ VALUES ('{0}', '{1}'); ", name, password);
                 if (!IsAuthorizeUser(name, oldPass, conn))
                     throw new Exception("Incorrect user name or password!");
 
-                string password = string.Empty;
+                string password;
                 using (var md5Hash = MD5.Create())
                 {
                     var data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(pass));
@@ -396,6 +473,190 @@ $@" UPDATE `terminal_archive`.`users` AS u
             return result > 0;
         }
 
+        public static bool AddRole(
+            string name, int? group,
+            string user/*, string pass*/
+)
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                string selectSql =
+$@" SELECT r.id FROM terminal_archive.roles AS r
+ WHERE r.name = '{name}';";
+                var selectCommand = new MySqlCommand(selectSql, conn);
+                var reader = selectCommand.ExecuteReader();
+                int roleCnt = -1;
+                while (reader.Read())
+                    roleCnt = reader.GetInt32(0);
+                reader.Close();
+
+                if (roleCnt > 0)
+                    throw new Exception("Role already exist!");
+
+                var groupStr = group == null ? " null " : $" '{group}' ";
+                string addSql = $@" INSERT INTO `terminal_archive`.`roles`
+(`name`, `id_group`) 
+VALUES ('{name}', {groupStr}); ";
+
+                var addCommand = new MySqlCommand(addSql, conn);
+                result = addCommand.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
+        public static bool EditRole(int id,
+            string name, int? group,
+            string user/*, string pass*/
+        )
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                string selectSql =
+$@" SELECT r.id FROM terminal_archive.roles AS r
+ WHERE r.id = '{id}';";
+                var selectCommand = new MySqlCommand(selectSql, conn);
+                var reader = selectCommand.ExecuteReader();
+                int userCnt = -1;
+                while (reader.Read())
+                    userCnt = reader.GetInt32(0);
+                reader.Close();
+
+                if (userCnt < 0)
+                    throw new Exception($"No user with id={id}!");
+
+                var groupStr = group == null ? " null " : $" '{group}' ";
+                string updateSql = string.Format(
+$@" UPDATE `terminal_archive`.`roles` AS r
+ SET `name` = '{name}', `id_group` = {groupStr}
+ WHERE r.`id` = '{id}' ; ");
+
+                var updateCommand = new MySqlCommand(updateSql, conn);
+                result = updateCommand.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
+        public static bool AddGroup(
+            string name,
+            string user/*, string pass*/
+)
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                string selectSql =
+$@" SELECT g.id FROM terminal_archive.groups AS g
+ WHERE g.name = '{name}';";
+                var selectCommand = new MySqlCommand(selectSql, conn);
+                var reader = selectCommand.ExecuteReader();
+                int roleCnt = -1;
+                while (reader.Read())
+                    roleCnt = reader.GetInt32(0);
+                reader.Close();
+
+                if (roleCnt > 0)
+                    throw new Exception("Group already exist!");
+
+                string addSql = $@" INSERT INTO `terminal_archive`.`groups`
+(`name`) 
+VALUES ('{name}'); ";
+
+                var addCommand = new MySqlCommand(addSql, conn);
+                result = addCommand.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
+        public static bool EditGroup(int id,
+            string name,
+            string user/*, string pass*/
+        )
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                string selectSql =
+$@" SELECT g.id FROM terminal_archive.groups AS g
+ WHERE g.id = '{id}';";
+                var selectCommand = new MySqlCommand(selectSql, conn);
+                var reader = selectCommand.ExecuteReader();
+                int userCnt = -1;
+                while (reader.Read())
+                    userCnt = reader.GetInt32(0);
+                reader.Close();
+
+                if (userCnt < 0)
+                    throw new Exception($"No group with id={id}!");
+
+                string updateSql = string.Format(
+$@" UPDATE `terminal_archive`.`groups` AS g
+ SET `name` = '{name}'
+ WHERE g.`id` = '{id}' ; ");
+
+                var updateCommand = new MySqlCommand(updateSql, conn);
+                result = updateCommand.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
         public static int TerminalsCount(string userName)
         {
             var result = 0;
@@ -404,7 +665,7 @@ $@" UPDATE `terminal_archive`.`users` AS u
             {
                 conn.Open();
 
-                var groups = UserTerminalGroup(userName, "Read", conn);
+                var groups = GetUserGroups(userName, "Read", conn);
                 var sql = " SELECT COUNT(t.id) FROM terminal_archive.terminals AS t ";
                 if (groups != null && groups.Any())
                 {
@@ -444,12 +705,12 @@ $@" WHERE t.id_group in ( {groupStr} ); ";
             try
             {
                 conn.Open();
-                var groups = UserTerminalGroup(userName, "Read", conn);
-                string sql =
-$@" SELECT COUNT(id) FROM terminal_archive.orders AS o ";
+                var groups = GetUserGroups(userName, "Read", conn);
+                var sql =
+@" SELECT COUNT(id) FROM terminal_archive.orders AS o ";
                 if (groups != null && groups.Any())
                     sql +=
-$@" LEFT JOIN terminal_archive.terminals AS t ON t.id = o.id_terminal ";
+@" LEFT JOIN terminal_archive.terminals AS t ON t.id = o.id_terminal ";
                 sql +=
 $@" WHERE o.id_terminal = {idTerminal} ";
                 if (groups != null && groups.Any())
@@ -481,18 +742,18 @@ $@" WHERE o.id_terminal = {idTerminal} ";
             return result;
         }
 
-        public static bool UpdateTerminals(string userName, int currentPageTerminal, int pageSize, bool all = false)
+        public static Dictionary<int, Terminal> GetTerminals(string userName, int currentPageTerminal, int pageSize, bool all = false)
         {
-            bool result;
+            var terminals = new Dictionary<int, Terminal>();
             var conn = new MySqlConnection(ConnStr);
             try
             {
                 conn.Open();
 
-                var groups = UserTerminalGroup(userName, "Read", conn);
+                var groups = GetUserGroups(userName, "Read", conn);
 
-                string sql =
-$@" SELECT t.`id`, g.`id`, g.`name`, t.`name`, t.`address` , t.`id_hasp`
+                var sql =
+@" SELECT t.`id`, g.`id`, g.`name`, t.`name`, t.`address` , t.`id_hasp`
  FROM terminal_archive.terminals AS t 
  LEFT JOIN terminal_archive.groups AS g ON g.id = t.id_group ";
                 if (groups != null && groups.Any())
@@ -504,7 +765,7 @@ $@" SELECT t.`id`, g.`id`, g.`name`, t.`name`, t.`address` , t.`id_hasp`
 $@" WHERE t.id_group in ( {groupStr} ) ";
                 }
 
-                sql += $@" ORDER BY t.id asc ";
+                sql += @" ORDER BY t.id asc ";
 
                 if (!all)
                     sql += $@" LIMIT {(currentPageTerminal - 1) * pageSize},{pageSize} ";
@@ -513,14 +774,13 @@ $@" WHERE t.id_group in ( {groupStr} ) ";
 
 
                 var command = new MySqlCommand(sql, conn);
-                Terminals.Clear();
                 var dataReader = command.ExecuteReader();
                 while (dataReader.HasRows && dataReader.Read())
                 {
                     var idTerminal = dataReader.GetInt32(0);
-                    if (!Terminals.ContainsKey(idTerminal))
+                    if (!terminals.ContainsKey(idTerminal))
                     {
-                        Terminals[idTerminal] = new Terminal()
+                        terminals[idTerminal] = new Terminal()
                         {
                             Id = idTerminal,
                             Name = dataReader.GetString(3),
@@ -532,8 +792,8 @@ $@" WHERE t.id_group in ( {groupStr} ) ";
                         if (!dataReader.IsDBNull(1))
                         {
                             var grId = dataReader.GetInt32(1);
-                            Terminals[idTerminal].IdGroup = grId;
-                            Terminals[idTerminal].Group = new Group
+                            terminals[idTerminal].IdGroup = grId;
+                            terminals[idTerminal].Group = new Group
                             {
                                 Id = grId,
                                 Name = dataReader.GetString(2),
@@ -542,32 +802,95 @@ $@" WHERE t.id_group in ( {groupStr} ) ";
                     }
                 }
                 dataReader.Close();
-                result = true;
             }
             catch (Exception ex)
             {
-                result = false;
             }
             finally
             {
                 conn.Close();
             }
-            return result;
+            return terminals;
         }
 
-        public static bool UpdateTerminalOrders(string userName, int idTerminal, int currentPageOrder, int pageSize)
+        public static Terminal GetTerminal(int id, string userName)
         {
-            //if (!Terminals.Any())
-            //    UpdateTerminals(userName, currentPageTerminal, pageSize);
-            bool result;
+            Terminal terminal = null;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                var groups = GetUserGroups(userName, "Read", conn);
+
+                var sql =
+$@" SELECT t.`id`, g.`id`, g.`name`, t.`name`, t.`address` , t.`id_hasp`
+ FROM terminal_archive.terminals AS t 
+ LEFT JOIN terminal_archive.groups AS g ON g.id = t.id_group 
+ WHERE t.id = {id} ";
+
+                if (groups != null && groups.Any())
+                {
+                    var groupStr = groups.Select(t => t.Id.ToString())
+                        .Aggregate((current, next) => current + ", " + next);
+
+                    sql +=
+$@" AND t.id_group in ( {groupStr} ) ";
+                }
+                sql += @" ORDER BY t.id asc ";
+                sql += " ; ";
+                
+                var command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    var idTerminal = dataReader.GetInt32(0);
+                    if (terminal == null)
+                    {
+                        terminal = new Terminal()
+                        {
+                            Id = idTerminal,
+                            Name = dataReader.GetString(3),
+                            Address = dataReader.GetString(4),
+                            IdHasp = dataReader.GetString(5),
+                            Orders = new Dictionary<int, Order>(),
+                            Parameters = new List<Parameter>()
+                        };
+                        if (!dataReader.IsDBNull(1))
+                        {
+                            var grId = dataReader.GetInt32(1);
+                            terminal.IdGroup = grId;
+                            terminal.Group = new Group
+                            {
+                                Id = grId,
+                                Name = dataReader.GetString(2),
+                            };
+                        }
+                    }
+                }
+                dataReader.Close();
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return terminal;
+        }
+
+        public static Dictionary<int, Order> GetTerminalOrders(string userName, int idTerminal, int currentPageOrder, int pageSize)
+        {
+            var orders = new Dictionary<int, Order>();
             var conn = new MySqlConnection(ConnStr);
             try 
             {
                 conn.Open();
 
-                var groups = UserTerminalGroup(userName, "Read", conn);
-                string sql =
-                    $@" SELECT o.`id`, `RNN`, s.id, s.name AS `состояние`, t.id, t.`name` AS `терминал` ,
+                var groups = GetUserGroups(userName, "Read", conn);
+                var sql =
+                    @" SELECT o.`id`, `RNN`, s.id, s.name AS `состояние`, t.id, t.`name` AS `терминал` ,
  d.id, d.description AS `доп. параметр`, od.value AS `значение`,
  f.id, f.`name` AS `топливо` , p.id, p.`name` AS `оплата` , o.id_pump AS `колонка`,  
  `pre_price` ,  `price` ,  `pre_quantity` ,  `quantity` ,  `pre_summ` ,  `summ` FROM terminal_archive.orders AS o
@@ -587,13 +910,11 @@ $@" WHERE t.id = {idTerminal} ";
                     sql +=
 $@" AND t.id_group in ( {groupStr} ) ";
                 }
-                if (groups != null && groups.Any())
                 sql +=
 $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
 
                 var command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
-                var orders = new Dictionary<int, Order>();
                 while (dataReader.HasRows && dataReader.Read())
                 {
                     var orderId = dataReader.GetInt32(0);
@@ -624,32 +945,31 @@ $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
                     }
                     if (!dataReader.IsDBNull(6))
                     {
-                        var additionalParameter = new AdditionalParameter();
-                        additionalParameter.Id = dataReader.GetInt32(6);
-                        additionalParameter.IdOrder = orderId;
-                        additionalParameter.Name = dataReader.GetString(7);
-                        additionalParameter.Value = dataReader.GetString(8);
+                        var additionalParameter = new AdditionalParameter
+                        {
+                            Id = dataReader.GetInt32(6),
+                            IdOrder = orderId,
+                            Name = dataReader.GetString(7),
+                            Value = dataReader.GetString(8)
+                        };
                         orders[orderId].AdditionalParameters.Add(additionalParameter);
                     }
                 }
-                Terminals[idTerminal].Orders = orders;
                 dataReader.Close();
-                result = true;
             }
             catch (Exception ex)
             {
-                result = false;
             }
             finally
             {
                 conn.Close();
             }
-            return result;
+            return orders;
         }
 
-        public static bool UpdateTerminalParameters(string userName, int idTerminal)
+        public static List<Parameter> GetTerminalParameters(string userName, int idTerminal)
         {
-            bool result;
+            var parameters = new List<Parameter>();
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -666,12 +986,17 @@ $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
 
                 var command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
-                var parameters = new List<Parameter>();
                 while (dataReader.HasRows && dataReader.Read())
                 {
                     if (dataReader.IsDBNull(0))
                         continue;
                     var parameterId = dataReader.GetInt32(0);
+                    //var t1 = dataReader.GetString(4);
+                    //var tt1 = dataReader.GetDateTime(4);
+                    //var t2 = dataReader.GetString(5);
+                    //var tt2 = DateTime.ParseExact(t2, "dd.mm.yyyy HH:mm:ss",
+                    //    System.Globalization.CultureInfo.InvariantCulture);
+
                     parameters.Add(new Parameter()
                     {
                         Id = parameterId,
@@ -679,45 +1004,37 @@ $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
                         Name = dataReader.GetString(1),
                         Path = dataReader.GetString(2),
                         Value = dataReader.GetString(3),
-                        LastEditTime = DateTime.ParseExact(dataReader.GetString(4), "dd.MM.yyyy HH:mm:ss",
-                            System.Globalization.CultureInfo.InvariantCulture),
-                        SaveTime = DateTime.ParseExact(dataReader.GetString(5), "dd.MM.yyyy HH:mm:ss",
-                            System.Globalization.CultureInfo.InvariantCulture),
+                        LastEditTime = dataReader.GetDateTime(4),
+                        SaveTime = dataReader.GetDateTime(5),
                     });
                 }
-                Terminals[idTerminal].Parameters = parameters;
                 dataReader.Close();
-                result = true;
             }
             catch (Exception ex)
             {
-                result = false;
             }
             finally
             {
                 conn.Close();
             }
-            return result;
+            return parameters;
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="haspId">Указывается для определения терминала</param>
-        /// <param name="rrn">Указывается для связи с заказом, может быть пустым</param>
-        /// <param name="trace">Информация о месте возникновения ошибки</param>
-        /// <param name="msg">Сообщение об ошибке</param>
-        /// <param name="errorLevel">Уровень важности ошибки, в случае связи с заказом оставить пустым! (там будет текущее состояние заказа)</param>
-        /// <param name="user">Данные для авторизации</param>
-        /// <param name="pass">Пароль для авторизации</param>
         /// <param name="groupId">номер групповой принадлежности терминала</param>
+        /// <param name="address"></param>
+        /// <param name="user">Данные для авторизации</param>
+        /// <param name="name"></param>
         /// <returns></returns>
         public static bool AddTerminal(
             string haspId, int groupId, string name, string address,
             string user/*, string pass*/
         )
         {
-            var result = 0;
+            int result;
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -739,12 +1056,11 @@ $@" SELECT t.id FROM terminal_archive.terminals AS t
                 if (terminal > 0)
                     throw new Exception("Terminal already exist!");
 
-                string groupTxt = groupId > 0 ? $"'{groupId}'" : "null";
+                var groupTxt = groupId > 0 ? $"'{groupId}'" : "null";
 
-                string addSql = string.Format(
-@" INSERT INTO `terminal_archive`.`terminals`
+                string addSql = $@" INSERT INTO `terminal_archive`.`terminals`
 (`id_hasp`, `id_group`, `address`, `name`) 
-VALUES ('{0}', {1}, '{2}','{3}');", haspId, groupTxt, address, name);
+VALUES ('{haspId}', {groupTxt}, '{address}','{name}') ; ";
 
                 var addCommand = new MySqlCommand(addSql, conn);
                 result = addCommand.ExecuteNonQuery();
@@ -763,27 +1079,25 @@ VALUES ('{0}', {1}, '{2}','{3}');", haspId, groupTxt, address, name);
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="id"></param>
         /// <param name="haspId">Указывается для определения терминала</param>
-        /// <param name="rrn">Указывается для связи с заказом, может быть пустым</param>
-        /// <param name="trace">Информация о месте возникновения ошибки</param>
-        /// <param name="msg">Сообщение об ошибке</param>
-        /// <param name="errorLevel">Уровень важности ошибки, в случае связи с заказом оставить пустым! (там будет текущее состояние заказа)</param>
+        /// <param name="address"></param>
         /// <param name="user">Данные для авторизации</param>
-        /// <param name="pass">Пароль для авторизации</param>
         /// <param name="groupId"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
         public static bool EditTerminal(int id,
             string haspId, int groupId, string name, string address,
             string user/*, string pass*/
         )
         {
-            var result = 0;
+            int result;
             var conn = new MySqlConnection(ConnStr);
             try
             {
                 conn.Open();
 
-                if (UserIsAdmin(user, conn))
+                if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
                 string selectSql =
@@ -820,59 +1134,12 @@ $@" UPDATE `terminal_archive`.`terminals` AS t
             return result > 0;
         }
 
-        public static bool UpdateAllGroups(string user)
-        {
-            bool result = false;
-            var conn = new MySqlConnection(ConnStr);
-            try
-            {
-                conn.Open();
-
-                var groups = UserTerminalGroup(user, "Read", conn);
-
-                string sql =
-$@" SELECT g.`id`, g.name
- FROM terminal_archive.groups AS g ";
-                if (groups != null && groups.Any())
-                {
-                    var groupStr = groups.Select(t => t.Id.ToString())
-                        .Aggregate((current, next) => current + ", " + next);
-
-                    sql +=
-$@" WHERE g.id in ( {groupStr} ) ";
-                }
-                sql +=
-$@" ORDER BY g.id asc; ";
-                MySqlCommand command = new MySqlCommand(sql, conn);
-                var dataReader = command.ExecuteReader();
-                Groups.Clear();
-                while (dataReader.HasRows && dataReader.Read())
-                {
-                    Groups.Add(new Group()
-                    {
-                        Id = dataReader.GetInt32(0),
-                        Name = dataReader.GetString(1),
-                    });
-                }
-                result = true;
-            }
-            catch (Exception ex)
-            {
-                result = false;
-            }
-            finally
-            {
-                conn.Close();
-            }
-            return result;
-        }
-
         public static bool UpdateUserRoles(
-            IEnumerable<UserRole> to_add, IEnumerable<UserRole> to_delete,
+            IEnumerable<UserRole> toAdd, IEnumerable<UserRole> toDelete,
             string user/*, string pass*/
         )
         {
-            var result = 0;
+            int result;
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -881,53 +1148,55 @@ $@" ORDER BY g.id asc; ";
                 if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
-                if (to_delete.Any())
+                var userRolesToDel = toDelete as UserRole[] ?? toDelete.ToArray();
+                if (userRolesToDel.Any())
                 {
-                    string u_rls_del = string.Empty;
+                    string uRlsDel = string.Empty;
                     int cnt = 0;
-                    foreach (var ur in to_delete)
+                    foreach (var ur in userRolesToDel)
                     {
                         if (cnt != 0)
-                            u_rls_del += " OR ";
+                            uRlsDel += " OR ";
 
-                        u_rls_del += $" (ur.`id_user`='{ur.IdUser}' AND ur.`id_role`='{ur.IdRole}') ";
+                        uRlsDel += $" (ur.`id_user`='{ur.IdUser}' AND ur.`id_role`='{ur.IdRole}') ";
                         ++cnt;
                     }
 
                     string deleteSql =
 $@" DELETE ur FROM `terminal_archive`.`user_roles` AS ur
- WHERE {u_rls_del} ;";
+ WHERE {uRlsDel} ;";
                     var deleteCommand = new MySqlCommand(deleteSql, conn);
-                    int deleted = deleteCommand.ExecuteNonQuery();
+                    var deleted = deleteCommand.ExecuteNonQuery();
 
-                    if (deleted < to_delete.Count())
+                    if (deleted < userRolesToDel.Length)
                         throw new Exception("Not all roles deleted!");
                 }
 
-                if (to_add != null && to_add.Any())
+                var userRolesToAdd = toAdd as UserRole[] ?? toAdd.ToArray();
+                if (userRolesToAdd.Any())
                 {
-                    string u_rol_add = string.Empty;
-                    int cnt = 0;
-                    foreach (var ur in to_add)
+                    var uRolAdd = string.Empty;
+                    var cnt = 0;
+                    foreach (var ur in userRolesToAdd)
                     {
                         if (cnt != 0)
-                            u_rol_add += " , ";
+                            uRolAdd += " , ";
 
-                        u_rol_add += $" ('{ur.IdUser}', '{ur.IdRole}') ";
+                        uRolAdd += $" ('{ur.IdUser}', '{ur.IdRole}') ";
                         ++cnt;
                     }
 
                     string addSql =
 $@" INSERT INTO `terminal_archive`.`user_roles` 
- (`id_user`, `id_role`) VALUES {u_rol_add} ;";
+ (`id_user`, `id_role`) VALUES {uRolAdd} ;";
                     var addCommand = new MySqlCommand(addSql, conn);
                     int added = addCommand.ExecuteNonQuery();
 
-                    if (added < to_add.Count())
+                    if (added < userRolesToAdd.Length)
                         throw new Exception("Not all roles added!");
                 }
 
-                result = to_add.Count() + to_delete.Count();
+                result = userRolesToAdd.Count() + userRolesToDel.Count();
             }
             catch (Exception ex)
             {
@@ -939,6 +1208,82 @@ $@" INSERT INTO `terminal_archive`.`user_roles`
             }
             return result > 0;
         }
+
+        public static bool UpdateRoleRights(
+            IEnumerable<RoleRight> toAdd, IEnumerable<RoleRight> toDelete,
+            string user/*, string pass*/
+        )
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                var roleRightsToDel = toDelete as RoleRight[] ?? toDelete.ToArray();
+                if (roleRightsToDel.Any())
+                {
+                    string rrDel = string.Empty;
+                    int cnt = 0;
+                    foreach (var rr in roleRightsToDel)
+                    {
+                        if (cnt != 0)
+                            rrDel += " OR ";
+
+                        rrDel += $" (rr.`id_role`='{rr.IdRole}' AND rr.`id_right`='{rr.IdRight}') ";
+                        ++cnt;
+                    }
+
+                    string deleteSql =
+$@" DELETE rr FROM `terminal_archive`.`role_rights` AS rr
+ WHERE {rrDel} ;";
+                    var deleteCommand = new MySqlCommand(deleteSql, conn);
+                    var deleted = deleteCommand.ExecuteNonQuery();
+
+                    if (deleted < roleRightsToDel.Length)
+                        throw new Exception("Not all rights deleted!");
+                }
+
+                var roleRightsToAdd = toAdd as RoleRight[] ?? toAdd.ToArray();
+                if (roleRightsToAdd.Any())
+                {
+                    var rrAdd = string.Empty;
+                    var cnt = 0;
+                    foreach (var rr in roleRightsToAdd)
+                    {
+                        if (cnt != 0)
+                            rrAdd += " , ";
+
+                        rrAdd += $" ('{rr.IdRole}', '{rr.IdRight}') ";
+                        ++cnt;
+                    }
+
+                    string addSql =
+$@" INSERT INTO `terminal_archive`.`role_rights` 
+ (`id_role`, `id_right`) VALUES {rrAdd} ;";
+                    var addCommand = new MySqlCommand(addSql, conn);
+                    int added = addCommand.ExecuteNonQuery();
+
+                    if (added < roleRightsToAdd.Length)
+                        throw new Exception("Not all rights added!");
+                }
+
+                result = roleRightsToAdd.Count() + roleRightsToDel.Count();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
 
         /// <summary>
         /// 
@@ -961,13 +1306,13 @@ $@" INSERT INTO `terminal_archive`.`user_roles`
             if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(pass)
                 || !IsAuthorizeUser(user, pass))
                 return false;
-            var result = 0;
+            int result;
             var conn = new MySqlConnection(ConnStr);
             try
             {
                 conn.Open();
 
-                if (UserIsAdmin(user, conn))
+                if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
                 string selectSql =
@@ -1008,20 +1353,24 @@ $@" SELECT o.id, o.id_state FROM terminal_archive.orders AS o
 
                 
 
-                string addSql = string.Format(
-@" INSERT INTO
- `history` (`id_terminal`, `date`, {0}{1}{2},`msg`)
+                var addSql = $@" INSERT INTO
+ `history` (
+`id_terminal`, 
+`date`, 
+{(order < 0 ? "" : ",`id_order`")}{(state < 0 ? "" : ",`id_state`")}{(string
+                    .IsNullOrWhiteSpace(trace)
+                    ? ""
+                    : ",`trace`")},
+`msg`)
  VALUES
- ('{3}','{4}'{5}{6}{7},'{8}');", 
-order < 0 ? "" : ",`id_order`",
-state < 0 ? "" : ",`id_state`",
-string.IsNullOrWhiteSpace(trace) ? "" : ",`trace`",
-terminal,
-date,
-order < 0 ? "" : $",'{order}'",
-state < 0 ? "" : $",'{state}'",
-string.IsNullOrWhiteSpace(trace) ? "" : $",'{trace}'",
-msg);
+ (
+'{terminal}',
+'{date}'
+{(order < 0 ? "" : $",'{order}'")}{(state < 0 ? "" : $",'{state}'")}{(string.IsNullOrWhiteSpace(
+                    trace)
+                    ? ""
+                    : $",'{trace}'")},
+'{msg}');";
 
                 var addCommand = new MySqlCommand(addSql, conn);
                 result = addCommand.ExecuteNonQuery();
@@ -1187,7 +1536,7 @@ $@" SELECT t.id FROM terminal_archive.terminals AS t
                     terminal = reader.GetInt32(0);
                     reader.Close();
                 }
-                var addSql = String.Empty;
+                string addSql;
                 if (orders > 0)
                 {
                     addSql =

@@ -23,7 +23,7 @@
             }
             </tr>
 
-        @foreach (var user in Model.Users)
+        @foreach (var user in Model.Users.Where(u => u.Roles != null))
         {
             <tr>
                 <th>@user.Name</th>
@@ -44,7 +44,7 @@
 
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Save" class="btn btn-default" name="submitButton" />
+                <input type="submit" value="Сохранить" class="btn btn-default" name="submitButton" />
             </div>
         </div>
 

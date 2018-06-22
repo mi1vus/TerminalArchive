@@ -74,6 +74,8 @@ namespace TerminalArchive.Domain.Models
     public class Group
     {
         public int Id { get; set; }
+        [Required(ErrorMessage = "Пожалуйста введите название группы!")]
+        [Display(Name = "Имя")]
         public string Name { get; set; }
     }
 }

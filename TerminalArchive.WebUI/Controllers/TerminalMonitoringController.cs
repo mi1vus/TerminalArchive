@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 using TerminalArchive.Domain.Abstract;
 using TerminalArchive.Domain.DB;
-using TerminalArchive.Domain.Models;
 using TerminalArchive.WebUI.Models;
 
 namespace TerminalArchive.WebUI.Controllers
@@ -30,6 +27,15 @@ namespace TerminalArchive.WebUI.Controllers
         public ViewResult List(int page = 1)
         {
             _repository.UserName = User?.Identity?.Name;
+
+            var maxPages = 0;
+            int totalItems = _repository.Terminals.Count();
+            if (totalItems <= 0)
+                maxPages = 1;
+            else
+                maxPages = (int)Math.Ceiling((decimal)totalItems / PageSize);
+
+
             var terminalsModel = new TerminalsListViewModel
             {
                 Terminals =
@@ -50,9 +56,9 @@ namespace TerminalArchive.WebUI.Controllers
                     },
                 PagingInfo = new PagingInfo
                 {
-                    CurrentPage = page,
+                    CurrentPage = page > maxPages ? maxPages : page,
                     ItemsPerPage = PageSize,
-                    TotalItems = _repository.Terminals.Count()
+                    TotalItems = totalItems
                 }
             };
             ViewBag.CurrentController = GetType().ToString();

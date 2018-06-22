@@ -1,0 +1,56 @@
+﻿@model TerminalArchive.WebUI.Models.RoleRightsViewModel
+
+@{
+    ViewBag.Title = "RoleRights";
+}
+
+<h2>RoleRights</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <hr />
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
+    <div class="form-horizontal">
+
+        <table class="table">
+            <tr>
+                <th>Роли\Права</th>
+                @foreach (var right in Model.Rights)
+                {
+                    <th>@right.Name</th>
+                }
+            </tr>
+
+            @foreach (var role in Model.Roles.Where(r=>r.Rights != null))
+            {
+                <tr>
+                    <th>@role.Name</th>
+                    @foreach (var right in Model.Rights)
+                    {
+                        <td>
+                            <input type="checkbox"
+                                   id="chk_@role.Id.ToString()_@right.Id.ToString()"
+                                   name="chk_@role.Id.ToString()_@right.Id.ToString()"
+                                   value="@(role.Rights.Any(r => r.Id == right.Id) ? "true" : "false")"
+                                   @(role.Rights.Any(r => r.Id == right.Id) ? "checked" : "") />
+                        </td>
+                    }
+                </tr>
+            }
+
+        </table>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" name="submitButton" />
+            </div>
+        </div>
+
+    </div>
+}
+
+@*<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>*@
