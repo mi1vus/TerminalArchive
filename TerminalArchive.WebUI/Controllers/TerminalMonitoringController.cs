@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using TerminalArchive.Domain.Abstract;
 using TerminalArchive.Domain.DB;
+using TerminalArchive.Domain.Models;
 using TerminalArchive.WebUI.Models;
 
 namespace TerminalArchive.WebUI.Controllers
@@ -28,8 +30,11 @@ namespace TerminalArchive.WebUI.Controllers
         {
             _repository.UserName = User?.Identity?.Name;
 
+            if (DbHelper.UserInRole(_repository.UserName, "Read", null))
+
             var maxPages = 0;
-            int totalItems = _repository.Terminals.Count();
+            var terminals = _repository.Terminals as IList<Terminal> ?? _repository.Terminals.ToList();
+            var totalItems = terminals.Count;
             if (totalItems <= 0)
                 maxPages = 1;
             else
@@ -39,7 +44,7 @@ namespace TerminalArchive.WebUI.Controllers
             var terminalsModel = new TerminalsListViewModel
             {
                 Terminals =
-                    from terminal in _repository.Terminals.OrderBy(t => t.Id).Skip((page - 1)*PageSize).Take(PageSize)
+                    from terminal in terminals.OrderBy(t => t.Id).Skip((page - 1)*PageSize).Take(PageSize)
                     //let tGrpIds =
                     //terminal.Groups.Values.Any()
                     //    ? terminal.Groups.Values.Select(t => t.Id.ToString())

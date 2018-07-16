@@ -7,15 +7,21 @@ namespace TerminalArchive.WebUI.Controllers
 {
     public class TerminalsController : Controller
     {
-        public TerminalsController()
-        {
-        }
+        //public TerminalsController()
+        //{
+        //}
+        //[HttpGet]
+        //[HttpPost]
+        //public IEnumerable<Parameter> GetParameters(int id = 0)
+        //{
+        //    return DbHelper.GetParametersForUpdate("1", "2", "3");
+        //}
 
         [HttpGet]
         [HttpPost]
         public IEnumerable<Parameter> GetParameters(string HaspId, string User, string Pass)
         {
-            return DbHelper.GetParameters(HaspId, User, Pass);
+            return DbHelper.GetParametersForUpdate(HaspId, User, Pass);
         }
 
         [HttpGet]

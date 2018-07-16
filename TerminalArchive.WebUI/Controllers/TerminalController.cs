@@ -112,6 +112,110 @@ namespace TerminalArchive.WebUI.Controllers
         }
 
         [Authorize]
+        public ViewResult Parameters(int id)
+         {
+            _repository.UserName = User?.Identity?.Name;
+            var terminal = _repository.GetTerminal(id);
+            var parameters = DbHelper.GetAllParameters();
+
+            var terminalsModel = new TerminalParametersViewModel
+            {
+                Parameters = parameters.Select(p=>new Parameter
+                {
+                    Id = p.Id,
+                    TId = terminal?.Id ?? 0,//terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.TId ?? 0,
+                    Name = p.Name,
+                    Path = p.Path,
+                    Value = terminal?.Parameters?.FirstOrDefault(tp=>tp.Id == p.Id)?.Value,
+                    SaveTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.SaveTime ?? DateTime.MinValue,
+                    LastEditTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.LastEditTime ?? DateTime.MinValue,
+                }),
+                Terminal = new ViewTerminal(terminal)
+                {
+                    GroupsIdsString = terminal.IdGroup.ToString(),
+                    GroupsNamesString = terminal.Group?.Name
+                }
+            };
+
+
+            return View(terminalsModel);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public ViewResult Parameters(int id, Terminal term)
+        {
+            _repository.UserName = User?.Identity?.Name;
+            var terminal = _repository.GetTerminal(id);
+            var result = false;
+
+            var toUpdate = new List<TerminalParameter>();
+            bool allInGroup = false;
+            foreach (var k in Request.Form.AllKeys)
+            {
+                if (k == "all_in_group")
+                    allInGroup = true;
+                else if(k.StartsWith("val"))
+                {
+                    var keyParts = k.Split(new[] {'_'}, StringSplitOptions.RemoveEmptyEntries);
+                    int idTerminal = int.Parse(keyParts[1]);
+                    int idParameter = int.Parse(keyParts[2]);
+                    var newPar = new TerminalParameter
+                    {
+                        IdTerminal = idTerminal,
+                        IdParameter = idParameter,
+                        Value = Request.Form[k]
+                    };
+                    toUpdate.Add(newPar);
+                }
+            }
+
+            if (allInGroup)
+            {
+                var terminalIds = _repository.Terminals.Where(t=>t.IdGroup == terminal.IdGroup && t.Id != id).Select(t=>t.Id);
+                var srcParams = toUpdate.ToArray();
+                foreach (var tId in terminalIds)
+                    toUpdate.AddRange(srcParams.Select(tp=>new TerminalParameter
+                    {
+                        IdParameter = tp.IdParameter,
+                        IdTerminal = tId,
+                        Value = tp.Value
+                    }));
+                result = DbHelper.UpdateTerminalParameters(toUpdate);
+            }else
+                result = DbHelper.UpdateTerminalParameters(
+                    toUpdate.Where(toUpdadePar=>!string.IsNullOrWhiteSpace(toUpdadePar.Value)
+                    && terminal?.Parameters?.FirstOrDefault(termParam => termParam.Id == toUpdadePar.IdParameter)?.Value != toUpdadePar.Value));
+
+            if (!result)
+                ModelState.AddModelError("Db",
+                    "Параметры терминала не были изменены! Повторите попытку или свяжитесь с администратором.");
+
+            terminal = _repository.GetTerminal(id);
+            var parameters = DbHelper.GetAllParameters();
+
+            var terminalsModel = new TerminalParametersViewModel
+            {
+                Parameters = parameters.Select(p => new Parameter
+                {
+                    Id = p.Id,
+                    TId = terminal?.Id ?? 0,//terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.TId ?? 0,
+                    Name = p.Name,
+                    Path = p.Path,
+                    Value = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.Value,
+                    SaveTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.SaveTime ?? DateTime.MinValue,
+                    LastEditTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.LastEditTime ?? DateTime.MinValue,
+                }),
+                Terminal = new ViewTerminal(terminal)
+                {
+                    GroupsIdsString = terminal.IdGroup.ToString(),
+                    GroupsNamesString = terminal.Group?.Name
+                }
+            };
+            return View(terminalsModel);
+        }
+
+        [Authorize]
         public ViewResult Edit(int id, int page)
         {
             if (!DbHelper.UserIsAdmin(User?.Identity?.Name))

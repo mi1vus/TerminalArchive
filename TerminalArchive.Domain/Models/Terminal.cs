@@ -6,6 +6,7 @@ namespace TerminalArchive.Domain.Models
 {
     public class Terminal
     {
+        [ScaffoldColumn(false)]
         public int Id { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите имя терминала!")]
         [Display(Name = "Имя")]
@@ -18,8 +19,11 @@ namespace TerminalArchive.Domain.Models
         public string IdHasp { get; set; }
         [Display(Name = "Принадлежность к группе терминалов")]
         public int IdGroup { get; set; }
+        [ScaffoldColumn(false)]
         public Dictionary<int, Order> Orders { get; set; }
+        [ScaffoldColumn(false)]
         public List<Parameter> Parameters { get; set; }
+        [ScaffoldColumn(false)]
         public Group Group { get; set; }
     }
 
@@ -51,6 +55,13 @@ namespace TerminalArchive.Domain.Models
         public decimal Summ { get; set; }
     }
 
+    public class TerminalParameter
+    {
+        public int IdTerminal { get; set; }
+        public int IdParameter { get; set; }
+        public string Value { get; set; }
+    }
+
     public class AdditionalParameter
     {
         public int Id { get; set; }
@@ -61,13 +72,26 @@ namespace TerminalArchive.Domain.Models
 
     public class Parameter
     {
+        [Required(ErrorMessage = "Не указан id параметра!")]
+        [ScaffoldColumn(false)]
         public int Id { get; set; }
+        [Required(ErrorMessage = "Не указан id терминала!")]
+        [ScaffoldColumn(false)]
         public int TId { get; set; }
+        //[Required(ErrorMessage = "Не указан id параметра терминала!")]
+        //[ScaffoldColumn(false)]
+        //public int TPId { get; set; }
+        [Display(Name = "Название")]
         public string Name { get; set; }
+        [Display(Name = "Путь")]
         public string Path { get; set; }
+        [Display(Name = "Значение")]
         public string Value { get; set; }
+        [ScaffoldColumn(false)]
         public DateTime LastEditTime { get; set; }
+        [ScaffoldColumn(false)]
         public DateTime SaveTime { get; set; }
+        [Display(Name = "Сохранен")]
         public bool Saved => SaveTime >= LastEditTime;
     }
 

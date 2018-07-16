@@ -223,6 +223,7 @@
     </Compile>
     <Compile Include="HtmlHelpers\PagingHelper.cs" />
     <Compile Include="Infrastructure\NinjectDependencyResolver.cs" />
+    <Compile Include="Models\HistoryViewModel.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\MenuInfo.cs" />
     <Compile Include="Models\PagingInfo.cs" />
@@ -269,6 +270,8 @@
     <Content Include="Views\Terminal\ListGroups.cshtml" />
     <Content Include="Views\Terminal\AddOrEditGroup.cshtml" />
     <Content Include="Views\Terminal\Unauthorize.cshtml" />
+    <Content Include="Views\Terminal\Parameters.cshtml" />
+    <Content Include="Views\History\List.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

@@ -1,0 +1,112 @@
+﻿@using TerminalArchive.WebUI.HtmlHelpers
+@model TerminalArchive.WebUI.Models.HistoryViewModel
+
+@{
+    ViewBag.Title = "История";
+}
+<div class="well">
+
+    <h2>История</h2>
+
+    <div class="table col-md-8">
+        <table>
+            <thead>
+                <tr>
+                    <th>Id записи</th>
+                    <th>Дата</th>
+                    <th>Терминал</th>
+                    <th>Заказ</th>
+                    <th>Состояние</th>
+                    <th>Источник</th>
+                    <th>Сообщение</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model.History)
+            {
+                    <tr>
+                        <td>@order.Id</td>
+                        <td>@order.Date</td>
+                        <td>@order.Terminal</td>
+                        <td>@order.Order</td>
+                        <td>@order.State</td>
+                        <td>@order.Trace</td>
+                        <td>@order.Message</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="btn-group pull-right">
+        @Html.PageLinks(Model.PagingInfo, x => Url.Action("List", new { page = x }))
+    </div>
+</div>
+
+
+
+
+
+    @*<table class="table">
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Date)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdTerminal)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Terminal)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdOrder)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Order)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdState)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.State)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Trace)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Message)
+            </th>
+        </tr>
+
+        @foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Date)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.IdTerminal)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Terminal)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.IdOrder)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Order)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.IdState)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.State)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Trace)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Message)
+        </td>
+    </tr>
+}
+
+    </table>*@

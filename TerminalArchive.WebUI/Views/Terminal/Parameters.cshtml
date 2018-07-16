@@ -1,0 +1,122 @@
+﻿@model TerminalArchive.WebUI.Models.TerminalParametersViewModel
+
+@{
+    ViewBag.Title = "Параметры";
+}
+
+
+
+<div class="well">
+    <h2>Параметры терминала</h2>
+    <h4>Терминал: @Model.Terminal.Name</h4>
+    <hr />
+    <dl class="dl-horizontal"></dl>
+    <div>
+        <h3>
+            @*<strong>
+                    <p>
+                        @Html.ActionLink("Редактировать", "Edit", new { id = Model.Terminal.Id, page = Model.PagingInfo.CurrentPage })
+                    </p>
+                </strong>*@
+            <span>Хасп: @Model.Terminal.IdHasp</span><br />
+        </h3>
+
+
+        <span>Адрес: @Model.Terminal.Address</span><br />
+        <span>Номера групп: @Model.Terminal.GroupsIdsString</span><br />
+        <span>Названия групп: @Model.Terminal.GroupsNamesString</span><br />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="table col-md-8">
+       @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+       <table>
+            <thead>
+            <tr>
+                <th>Id параметра</th>
+                <th>Терминал</th>
+                <th>Название</th>
+                <th>Путь</th>
+                <th>Значение</th>
+                <th>Сохранен</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var parametr in Model.Parameters)
+            {
+                <tr>
+                    <td>@parametr.Id</td>
+                    <td>@parametr.TId</td>
+                    <td>@parametr.Name</td>
+                    <td>@parametr.Path</td>
+                    <td>
+                        <div class="col-md-10">
+                            @Html.Editor("val_" + parametr.TId + "_" + parametr.Id, new {htmlAttributes = new { @Value = parametr.Value, @class = "form-control"} })
+                            @Html.ValidationMessage("val_" + parametr.TId + "_" + parametr.Id, "", new {@class = "text-danger"})
+                        </div>
+                    </td>
+                    <td>@parametr.Saved</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="checkbox"
+                   id="all_in_group"
+                   name="all_in_group"/><span> Применить ко всем терминалам в группе</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="submit" value="Сохранить" class="btn btn-default" />
+        </div>
+    </div>
+}
+    </div>
+</div>
+
+
+@*<h2>Parameters</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        <h4>Parameter</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Path, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Path, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Path, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Value, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Value, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Value, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}*@

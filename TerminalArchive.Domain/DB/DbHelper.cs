@@ -120,8 +120,12 @@ $@" SELECT MIN(rg.name not like 'None') FROM terminal_archive.users AS u
 
         public static bool UserIsAdmin(string name, MySqlConnection contextConn = null)
         {
+            if (string.IsNullOrEmpty(name))
+                return false;
+
             //var groups = GetUserGroups(name, "Read", contextConn);
             //groups.AddRange(GetUserGroups(name, "Write", contextConn));
+
             if (!UserInRole(name, "Write", null, contextConn) || !UserInRole(name, "Read", null, contextConn) /*|| (groups != null && groups.Any())*/)
                 return false;
 
@@ -267,6 +271,81 @@ $@" WHERE g.id in ( {groupStr} ) ";
             return users;
         }
 
+        public static User GetUser(int id)
+        {
+            var user = new User();
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                string sql = $@" SELECT u.`id`, u.`name`, r.`id`, r.`name`, r.`id_group`
+ FROM terminal_archive.users AS u
+ LEFT JOIN terminal_archive.user_roles AS ur ON ur.id_user = u.id
+ LEFT JOIN terminal_archive.roles AS r ON ur.id_role = r.id
+ WHERE u.id = {id}
+ ORDER BY u.id asc; ";
+                var command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    var idUser = dataReader.GetInt32(0);
+                    user = new User
+                    {
+                        Id = idUser,
+                        Name = dataReader.GetString(1),
+                        Roles = new List<Role>()
+                    };
+
+                    if (dataReader.IsDBNull(2)) continue;
+
+                    var rId = dataReader.GetInt32(2);
+                    user.Roles.Add(new Role
+                    {
+                        Id = rId,
+                        Name = dataReader.GetString(3),
+                        IdGroup = dataReader.IsDBNull(4) ? null : (int?)dataReader.GetInt32(4),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return user;
+        }
+
+        public static int GetUsersId(string name)
+        {
+            var userId = 0;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                string sql = $@" SELECT u.`id`
+ FROM terminal_archive.users AS u
+ WHERE  u.name = '{name}'; ";
+                var command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    userId = dataReader.GetInt32(0);
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return userId;
+        }
+
         public static Dictionary<int, Role> GetAllRoles(string user)
         {
             var roles = new Dictionary<int, Role>();
@@ -356,6 +435,89 @@ $@" WHERE g.id in ( {groupStr} ) ";
             return rights;
         }
 
+        public static List<Parameter> GetAllParameters()
+        {
+            var parameters = new List<Parameter>();
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                const string sql =
+@" SELECT p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра` 
+ FROM terminal_archive.parameters AS p
+ ORDER BY p.id asc; ";
+                MySqlCommand command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    var idRight = dataReader.GetInt32(0);
+                    parameters.Add(new Parameter()
+                    {
+                        Id = idRight,
+                        Name = dataReader.GetString(1),
+                        Path = dataReader.GetString(2),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return parameters;
+        }
+
+        public static bool UpdateTerminalParameters(IEnumerable<TerminalParameter> toUpdate)
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                var terminalParameters = toUpdate as TerminalParameter[] ?? toUpdate.ToArray();
+                if (terminalParameters.Any())
+                {
+                    string tParsUpd = string.Empty;
+                    int cnt = 0;
+                    foreach (var tp in terminalParameters)
+                    {
+                        if (cnt != 0)
+                            tParsUpd += " , ";
+
+                        tParsUpd += $" ({tp.IdTerminal}, {tp.IdParameter}, '{tp.Value}') ";
+                        ++cnt;
+                    }
+
+                    string deleteSql =
+$@" INSERT INTO `terminal_archive`.`terminal_parameters`
+ (`id_terminal`, `id_parameter`, `value`) 
+ VALUES {tParsUpd}
+ ON DUPLICATE KEY UPDATE    
+ value = VALUES(`value`);";
+                    var deleteCommand = new MySqlCommand(deleteSql, conn);
+                    var updated = deleteCommand.ExecuteNonQuery();
+
+                    if (updated < terminalParameters.Length)
+                        throw new Exception("Not all terminal parameters updated!");
+                }
+
+                result = terminalParameters.Count();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
         public static bool AddUser(
             string name, string pass,
             string user/*, string pass*/
@@ -423,10 +585,10 @@ VALUES ('{name}', '{password}'); ";
             {
                 conn.Open();
 
-                if (!UserIsAdmin(user, conn))
-                    throw new Exception("Unauthorize operation!");
+                //if (!UserIsAdmin(user, conn))
+                //    throw new Exception("Unauthorize operation!");
 
-                if (!IsAuthorizeUser(name, oldPass, conn))
+                if (!UserIsAdmin(user, conn) && !IsAuthorizeUser(name, oldPass, conn))
                     throw new Exception("Incorrect user name or password!");
 
                 string password;
@@ -456,7 +618,7 @@ $@" SELECT u.id FROM terminal_archive.users AS u
 
                 string updateSql = string.Format(
 $@" UPDATE `terminal_archive`.`users` AS u
- SET `name` = '{name}',`pass` = '{password}'
+ SET /*`name` = '{name}',*/`pass` = '{password}'
  WHERE u.`id` = '{id}' ; ");
 
                 var updateCommand = new MySqlCommand(updateSql, conn);
@@ -976,7 +1138,7 @@ $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
                 conn.Open();
 
                 string sql =
-                $@" SELECT p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра` ,tp.value AS `значение параметра`, 
+$@" SELECT p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра` ,tp.value AS `значение параметра`, 
  tp.last_edit_date, tp.save_date
  FROM terminal_archive.terminals AS t
  LEFT JOIN terminal_archive.terminal_parameters AS tp ON t.id = tp.id_terminal
@@ -1012,6 +1174,162 @@ $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
             }
             catch (Exception ex)
             {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return parameters;
+        }
+
+        public static int HistoryCount(string userName, int idTerminal)
+        {
+            var result = 0;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+                var groups = GetUserGroups(userName, "Read", conn);
+
+                var sql =
+@" SELECT COUNT(id)  FROM `terminal_archive`.`history` AS h ";
+                if (groups != null && groups.Any())
+                    sql +=
+@" LEFT JOIN terminal_archive.terminals AS t ON t.id = h.id_terminal ";
+                sql +=
+$@" WHERE h.id_terminal = {idTerminal} ";
+                if (groups != null && groups.Any())
+                {
+                    var groupStr = groups.Select(t => t.Id.ToString())
+                        .Aggregate((current, next) => current + ", " + next);
+
+                    sql += $@" AND t.id_group in ( {groupStr} ) ";
+                }
+                sql += ";";
+
+                var countCommand = new MySqlCommand(sql, conn);
+
+                var dataReader = countCommand.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    result = dataReader.GetInt32(0);
+                }
+                dataReader.Close();
+            }
+            catch (Exception ex)
+            {
+                result = -1;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result;
+        }
+
+        public static List<History> GetHistory(
+            string userName, int idTerminal, int currentPageHistory, int pageSize
+        )
+        {
+            var history = new List<History>();
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                var groups = GetUserGroups(userName, "Read", conn);
+                var sql =
+@" SELECT h.`id`, h.`date`, h.`id_terminal`, t.`name`, h.`id_order`, o.`RNN`, h.`id_state`, s.`name`, h.`trace`, h.`msg`
+ FROM `terminal_archive`.`history` AS h
+ LEFT JOIN terminal_archive.terminals AS t ON h.id_terminal = t.id
+ LEFT JOIN terminal_archive.orders AS o ON h.id_order = o.id
+ LEFT JOIN terminal_archive.order_states AS s ON h.id_state = s.id";
+                sql +=
+$@" WHERE h.id_terminal = {idTerminal} ";
+                if (groups != null && groups.Any())
+                {
+                    var groupStr = groups.Select(t => t.Id.ToString())
+                        .Aggregate((current, next) => current + ", " + next);
+
+                    sql +=
+$@" AND t.id_group in ( {groupStr} ) ";
+                }
+                sql +=
+$@" ORDER BY h.id desc LIMIT {(currentPageHistory - 1) * pageSize},{pageSize};";
+
+                var command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    var historyId = dataReader.GetInt32(0);
+                    history.Add( new History
+                    {
+                        Id = historyId,
+                        Date = dataReader.GetDateTime(1),
+                        IdTerminal = dataReader.GetInt32(2),
+                        Terminal = dataReader.GetString(3),
+                        IdOrder = dataReader.IsDBNull(4) ? 0: dataReader.GetInt32(4),
+                        Order = dataReader.IsDBNull(5) ? null : dataReader.GetString(5),
+                        IdState = dataReader.GetInt32(6),
+                        State = dataReader.IsDBNull(7) ? $"Ошибка уровня: {dataReader.GetInt32(6) - 1000}" : dataReader.GetString(7),
+                        Trace = dataReader.IsDBNull(8) ? null : dataReader.GetString(8),
+                        Message = dataReader.GetString(9),
+                    });
+                }
+                dataReader.Close();
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return history;
+        }
+
+        public static List<Parameter> GetParametersForUpdate(string haspId, string user, string pass)
+        {
+            if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(pass)
+                || !IsAuthorizeUser(user, pass))
+                return null;
+
+            List<Parameter> parameters = new List<Parameter>();
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                string sql =
+$@" SELECT t.`id`, 
+ p.id AS `id параметра`, p.name AS `имя параметра` ,p.path AS `путь параметра`, 
+ tp.value AS `значение параметра`, 
+ tp.last_edit_date, tp.save_date
+ FROM terminal_archive.terminals AS t
+ LEFT JOIN terminal_archive.terminal_parameters AS tp ON t.id = tp.id_terminal
+ LEFT JOIN terminal_archive.parameters AS p ON tp.id_parameter = p.id
+ WHERE tp.save_date < tp.last_edit_date AND t.id_hasp = '{haspId}' /*AND t.id IN (SELECT tg.id_terminal FROM terminal_archive.terminal_groups AS tg WHERE tg.id_group = )*/
+ ORDER BY t.id asc; ";
+                MySqlCommand command = new MySqlCommand(sql, conn);
+                var dataReader = command.ExecuteReader();
+                while (dataReader.HasRows && dataReader.Read())
+                {
+                    parameters.Add(new Parameter()
+                    {
+                        Id = dataReader.GetInt32(1),
+                        TId = dataReader.GetInt32(0),
+                        Name = dataReader.GetString(2),
+                        Path = dataReader.GetString(3),
+                        Value = dataReader.GetString(4)
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                parameters = null;
             }
             finally
             {
@@ -1384,56 +1702,6 @@ $@" SELECT o.id, o.id_state FROM terminal_archive.orders AS o
                 conn.Close();
             }
             return result > 0;
-        }
-
-        public static IEnumerable<Parameter> GetParameters(string haspId, string user, string pass)
-        {
-            if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(pass)
-                || !IsAuthorizeUser(user, pass))
-                return null;
-
-            List<Parameter> parameters = new List<Parameter>();
-            var conn = new MySqlConnection(ConnStr);
-            try
-            {
-                conn.Open();
-
-                if (!UserIsAdmin(user, conn))
-                    throw new Exception("Unauthorize operation!");
-
-                string sql =
-$@" SELECT t.`id`, 
- p.id AS `id параметра`, p.name AS `имя параметра` ,p.path AS `путь параметра`, 
- tp.value AS `значение параметра`, 
- tp.last_edit_date, tp.save_date
- FROM terminal_archive.terminals AS t
- LEFT JOIN terminal_archive.terminal_parameters AS tp ON t.id = tp.id_terminal
- LEFT JOIN terminal_archive.parameters AS p ON tp.id_parameter = p.id
- WHERE tp.save_date < tp.last_edit_date AND t.id_hasp = '{haspId}' /*AND t.id IN (SELECT tg.id_terminal FROM terminal_archive.terminal_groups AS tg WHERE tg.id_group = )*/
- ORDER BY t.id asc; ";
-                MySqlCommand command = new MySqlCommand(sql, conn);
-                var dataReader = command.ExecuteReader();
-                while (dataReader.HasRows && dataReader.Read())
-                {
-                    parameters.Add(new Parameter()
-                    {
-                        Id = dataReader.GetInt32(1),
-                        TId = dataReader.GetInt32(0),
-                        Name = dataReader.GetString(2),
-                        Path = dataReader.GetString(3),
-                        Value = dataReader.GetString(4)
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                parameters = null;
-            }
-            finally
-            {
-                conn.Close();
-            }
-            return parameters;
         }
 
         public static int UpdateSaveDate(int id, int parId, string user, string pass)

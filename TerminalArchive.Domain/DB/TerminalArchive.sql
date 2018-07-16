@@ -17,6 +17,8 @@ DROP TABLE IF EXISTS `terminal_archive`.`parameters`;
 DROP TABLE IF EXISTS `terminal_archive`.`terminals`;
 DROP TABLE IF EXISTS `terminal_archive`.`groups`;
 
+DROP TRIGGER IF EXISTS `terminal_archive`.`add_rights`;
+
 CREATE TABLE IF NOT EXISTS `terminal_archive`.`groups` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
@@ -178,6 +180,50 @@ CREATE TABLE IF NOT EXISTS `terminal_archive`.`history` (
   FOREIGN KEY (`id_state`) REFERENCES `terminal_archive`.`order_states`(`id`)
 );
 
+ DELIMITER $$
+ CREATE TRIGGER `terminal_archive`.`add_rights` AFTER INSERT ON `terminal_archive`.`groups`
+ FOR EACH ROW 
+ BEGIN
+	DECLARE `id_group_v` BIGINT UNSIGNED DEFAULT 0;
+	DECLARE `id_role_v` BIGINT UNSIGNED DEFAULT 0;
+
+	SELECT MAX(g.`id`) INTO @`id_group_v` FROM `terminal_archive`.`groups` AS g;
+
+	INSERT INTO `terminal_archive`.`roles` (`id_group`, `name`) VALUES 
+	(@`id_group_v`, CONCAT('Читатели ', @`id_group_v`, ' гр.'));
+
+	SELECT MAX(r.`id`) INTO @`id_role_v` FROM `terminal_archive`.`roles` AS r;
+
+	INSERT INTO `terminal_archive`.`role_rights` (`id_role`, `id_right`) VALUES 
+	(@`id_role_v`, '2');
+
+	INSERT INTO `terminal_archive`.`roles` (`id_group`, `name`) VALUES 
+	(@`id_group_v`, CONCAT('Писатели ', @`id_group_v`, ' гр.'));
+
+	SELECT MAX(r.`id`) INTO @`id_role_v` FROM `terminal_archive`.`roles` AS r;
+
+	INSERT INTO `terminal_archive`.`role_rights` (`id_role`, `id_right`) VALUES 
+	(@`id_role_v`, '2'),
+	(@`id_role_v`, '3');   
+ END $$
+ DELIMITER ;
+
+INSERT INTO `terminal_archive`.`rights` (`id`,`name`) VALUES 
+('1', 'None'),
+('2', 'Read'),
+('3', 'Write');
+
+INSERT INTO `terminal_archive`.`roles` ( `id`, `id_group`, `name`) VALUES 
+('1', null, 'Админы'),
+('2', null, 'Читатели'),
+('3', null, 'Забаненные');
+
+INSERT INTO `terminal_archive`.`role_rights` (`id`, `id_role`, `id_right`) VALUES 
+('1', '1', '2'),
+('2', '1', '3'),
+('3', '2', '2'),
+('4', '3', '1');
+
 INSERT INTO `terminal_archive`.`groups` (`id`,`name`) VALUES 
 ('1', 'Тестовая1'),
 ('2', 'Тестовая2'),
@@ -245,30 +291,6 @@ INSERT INTO `terminal_archive`.`order_details` (`id`, `id_order`, `id_detail`, `
 ('1', '13', '1', '2'),
 ('2', '13', '2', '4');
 
-INSERT INTO `terminal_archive`.`rights` (`id`,`name`) VALUES 
-('1', 'None'),
-('2', 'Read'),
-('3', 'Write');
-
-INSERT INTO `terminal_archive`.`roles` ( `id`, `id_group`, `name`) VALUES 
-('1', null, 'Админы'),
-('2', '1', 'Читатели 1 группы'),
-('3', '2', 'Редакторы 2 группы'),
-('4', null, 'Читатели'),
-('5', null, 'Забаненные'),
-('6', '3', 'Редакторы 3 группы');
-
-INSERT INTO `terminal_archive`.`role_rights` (`id`, `id_role`, `id_right`) VALUES 
-('1', '1', '2'),
-('2', '1', '3'),
-('3', '2', '2'),
-('4', '3', '2'),
-('5', '3', '3'),
-('6', '4', '2'),
-('7', '5', '1'),
-('8', '6', '2'),
-('9', '6', '3');
-
 INSERT INTO `terminal_archive`.`users` (`id`, `name`, `pass`) VALUES 
 ('1', 'Admin', '81dc9bdb52d04dc20036dbd8313ed055'),
 ('2', 'Max', '81dc9bdb52d04dc20036dbd8313ed055'),
@@ -288,7 +310,6 @@ INSERT INTO `terminal_archive`.`user_roles` (`id`,`id_user`,`id_role`) VALUES
 INSERT INTO `terminal_archive`.`history` (`id`, `date`, `id_terminal`, `id_order`, `id_state`, `trace`, `msg`) VALUES
 ('1', '2018-05-18 18:37:37', '1', '13', '2', NULL, 'заказ изменен'),
 ('2', '2018-05-18 18:48:02', '1', NULL, '1002', NULL, 'заказ изменен');
-
 
 SELECT t.`id`, t.`id_hasp`,  g.`name` AS `группа` ,  t.`address` , t.`name`, 
 p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра` ,tp.value AS `значение параметра`, 

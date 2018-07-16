@@ -1,4 +1,5 @@
-﻿using System.Web.Mvc;
+﻿using System.Linq;
+using System.Web.Mvc;
 using System.Web.Security;
 using TerminalArchive.Domain.DB;
 using TerminalArchive.WebUI.Models;
@@ -35,13 +36,21 @@ namespace TerminalArchive.WebUI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public ActionResult Logout()
         {
-            //if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Выйти")
-            //{
+            if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Выйти")
+            {
                 FormsAuthentication.SignOut();
-            //}
+            }
+            else
+            if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Сменить пароль")
+            {
+                var userId = DbHelper.GetUsersId(User?.Identity?.Name);
+                return Redirect(Url.Action("AddOrEdit", "User", new {id = userId }));
+            }
+
 
             var url = Request["ReturnUrl"];
             return Redirect(url ?? Url.Action("List", "TerminalMonitoring"));

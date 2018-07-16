@@ -24,9 +24,9 @@ namespace TerminalArchive.WebUI.Controllers
                 menues.Add(new MenuInfo {Text = "Пользователи", Controller = "User", Action = "ListUser"});
                 menues.Add(new MenuInfo {Text = "Новый пользователь", Controller = "User", Action = "AddOrEdit"});
                 menues.Add(new MenuInfo {Text = "Роли пользователей", Controller = "User", Action = "UserRoles"});
-                menues.Add(new MenuInfo {Text = "Роли", Controller = "User", Action = "ListRoles"});
-                menues.Add(new MenuInfo {Text = "Новая роль пользователей",Controller = "User",Action = "AddOrEditRole"});
-                menues.Add(new MenuInfo {Text = "Права ролей", Controller = "User", Action = "RoleRights"});
+                //menues.Add(new MenuInfo { Text = "Роли", Controller = "User", Action = "ListRoles" });
+                //menues.Add(new MenuInfo { Text = "Новая роль пользователей", Controller = "User", Action = "AddOrEditRole" });
+                //menues.Add(new MenuInfo { Text = "Права ролей", Controller = "User", Action = "RoleRights" });
             }
             return PartialView(menues);
         }

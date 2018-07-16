@@ -14,7 +14,7 @@
                 <input type="submit" class="btn btn-success" value="Подробно" />
             </div>
         }*@
-        @Html.ActionLink("Детально", "Details", "Terminal",
+        @Html.ActionLink("Заказы", "Details", "Terminal",
         new
         {
             id = Model.Id,
@@ -26,7 +26,42 @@
             + ("" == ViewBag.CurrentController ? " btn-primary" : "")
         }
         )
-   
+        @Html.ActionLink("Параметры", "Parameters", "Terminal",
+        new
+        {
+            id = Model.Id
+        },
+        new
+        {
+            @class = "btn btn-success"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        }
+        )
+
+        @Html.ActionLink("Данные", "Edit", "Terminal",
+        new
+        {
+            id = Model.Id
+        },
+        new
+        {
+            @class = "btn btn-success"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        }
+        )
+
+        @Html.ActionLink("История", "List", "History",
+        new
+        {
+            id = Model.Id,
+            page = 1
+        },
+        new
+        {
+            @class = "btn btn-success"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        }
+        )       
         @*<a href='/Pages/TerminalInfo.aspx?idT=@Model.Id'>Детально</a>*@
     </td>
 </tr>

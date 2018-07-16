@@ -76,6 +76,7 @@
     <Compile Include="Abstract\ITerminalRepository.cs" />
     <Compile Include="DB\DbHelper.cs" />
     <Compile Include="DB\TerminalRepository.cs" />
+    <Compile Include="Models\History.cs" />
     <Compile Include="Models\Terminal.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

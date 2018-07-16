@@ -5,9 +5,9 @@
     ViewBag.Title = "Терминал";
 }
 
-<p>
+@*<p>
     @Html.ActionLink("Новый терминал", "Add")
-</p>
+</p>*@
 
 <div class="well">
     <h2>Детальные данные</h2>
@@ -17,11 +17,11 @@
     </dl>
     <div>
         <h3>
-            <strong>
+            @*<strong>
                 <p>
                     @Html.ActionLink("Редактировать", "Edit", new { id = Model.Terminal.Id, page = Model.PagingInfo.CurrentPage })
                 </p>
-            </strong>
+            </strong>*@
             <span>Хасп: @Model.Terminal.IdHasp</span><br />
         </h3>
 
@@ -31,7 +31,7 @@
         <span>Названия групп: @Model.Terminal.GroupsNamesString</span><br/>
         
         <div class="table col-md-8">
-        <table>
+        @*<table>
             <thead>
                 <tr>
                     <th>Id параметра</th>
@@ -55,7 +55,7 @@
                     </tr>
                 }
             </tbody>
-        </table>
+        </table>*@
 
         <table>
             <thead>

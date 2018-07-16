@@ -129,8 +129,12 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             if (id != 0)
             {
-                var users = DbHelper.GetAllUsers(_repository.UserName);
-                return View(users[id]);
+                var user = DbHelper.GetUser(id);
+
+                if (user.Name == _repository.UserName)
+                    return View(user);
+                else return View("../Terminal/Unauthorize");
+
             }
             else
                 return View(new User());
@@ -158,149 +162,149 @@ namespace TerminalArchive.WebUI.Controllers
             }
         }
 
-        [Authorize]
-        public ActionResult ListRoles()
-        {
-            _repository.UserName = User?.Identity?.Name;
-            var roles = DbHelper.GetAllRoles(_repository.UserName);
+        //[Authorize]
+        //public ActionResult ListRoles()
+        //{
+        //    _repository.UserName = User?.Identity?.Name;
+        //    var roles = DbHelper.GetAllRoles(_repository.UserName);
 
-            return View(roles.Values);
-        }
-        [Authorize]
-        public ActionResult AddOrEditRole(int id = 0)
-        {
-            _repository.UserName = User?.Identity?.Name;
-            var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
-            var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
-            groups.AddRange(groupsAll);
-            ViewBag.Groups = groups;
+        //    return View(roles.Values);
+        //}
+        //[Authorize]
+        //public ActionResult AddOrEditRole(int id = 0)
+        //{
+        //    _repository.UserName = User?.Identity?.Name;
+        //    var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
+        //    var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
+        //    groups.AddRange(groupsAll);
+        //    ViewBag.Groups = groups;
 
-            if (id != 0)
-            {
-                var roles = DbHelper.GetAllRoles(_repository.UserName);
-                return View(roles[id]);
-            }
-            else
-                return View(new Role());
-        }
+        //    if (id != 0)
+        //    {
+        //        var roles = DbHelper.GetAllRoles(_repository.UserName);
+        //        return View(roles[id]);
+        //    }
+        //    else
+        //        return View(new Role());
+        //}
 
-        [Authorize]
-        [HttpPost]
-        public ActionResult AddOrEditRole(int id = 0, Role role = null)
-        {
-            _repository.UserName = User?.Identity?.Name;
-            var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
-            var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
-            groups.AddRange(groupsAll);
-            ViewBag.Groups = groups;
+        //[Authorize]
+        //[HttpPost]
+        //public ActionResult AddOrEditRole(int id = 0, Role role = null)
+        //{
+        //    _repository.UserName = User?.Identity?.Name;
+        //    var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
+        //    var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
+        //    groups.AddRange(groupsAll);
+        //    ViewBag.Groups = groups;
 
-            if (ModelState.IsValid && role != null)
-            {
-                var res = role.Id != 0
-                    ? DbHelper.EditRole(role.Id, role.Name, role.IdGroup <= 0 ? null : role.IdGroup, _repository.UserName)
-                    : DbHelper.AddRole(role.Name, role.IdGroup <= 0 ? null : role.IdGroup, _repository.UserName);
-                if (!res)
-                {
-                    ModelState.AddModelError("Db", "Роль не была добавлена! Повторите попытку или свяжитесь с администратором.");
-                    return View(role);
-                }
-                return View("Saved");
-            }
-            else
-            {
-                return View(role);
-            }
-        }
+        //    if (ModelState.IsValid && role != null)
+        //    {
+        //        var res = role.Id != 0
+        //            ? DbHelper.EditRole(role.Id, role.Name, role.IdGroup <= 0 ? null : role.IdGroup, _repository.UserName)
+        //            : DbHelper.AddRole(role.Name, role.IdGroup <= 0 ? null : role.IdGroup, _repository.UserName);
+        //        if (!res)
+        //        {
+        //            ModelState.AddModelError("Db", "Роль не была добавлена! Повторите попытку или свяжитесь с администратором.");
+        //            return View(role);
+        //        }
+        //        return View("Saved");
+        //    }
+        //    else
+        //    {
+        //        return View(role);
+        //    }
+        //}
 
-        // GET: User
-        [Authorize]
-        public ActionResult RoleRights()
-        {
-            _repository.UserName = User?.Identity?.Name;
-            var rights = DbHelper.GetAllRights(_repository.UserName);
-            var roles = DbHelper.GetAllRoles(_repository.UserName);
-            if (rights == null || roles == null)
-                return View(new RoleRightsViewModel());
+        //// GET: User
+        //[Authorize]
+        //public ActionResult RoleRights()
+        //{
+        //    _repository.UserName = User?.Identity?.Name;
+        //    var rights = DbHelper.GetAllRights(_repository.UserName);
+        //    var roles = DbHelper.GetAllRoles(_repository.UserName);
+        //    if (rights == null || roles == null)
+        //        return View(new RoleRightsViewModel());
 
-            var model = new RoleRightsViewModel
-            {
-                Rights = rights,
-                Roles = roles.Values
-            };
-            return View(model);
-        }
+        //    var model = new RoleRightsViewModel
+        //    {
+        //        Rights = rights,
+        //        Roles = roles.Values
+        //    };
+        //    return View(model);
+        //}
 
-        [Authorize]
-        [HttpPost]
-        public ActionResult RoleRights(int id = 0)
-        {
-            _repository.UserName = User?.Identity?.Name;
-            var rights = DbHelper.GetAllRights(_repository.UserName);
-            var roles = DbHelper.GetAllRoles(_repository.UserName);
-            if (rights == null || roles == null)
-                return View(new RoleRightsViewModel());
+        //[Authorize]
+        //[HttpPost]
+        //public ActionResult RoleRights(int id = 0)
+        //{
+        //    _repository.UserName = User?.Identity?.Name;
+        //    var rights = DbHelper.GetAllRights(_repository.UserName);
+        //    var roles = DbHelper.GetAllRoles(_repository.UserName);
+        //    if (rights == null || roles == null)
+        //        return View(new RoleRightsViewModel());
 
-            var model = new RoleRightsViewModel
-            {
-                Rights = rights,
-                Roles = roles.Values
-            };
+        //    var model = new RoleRightsViewModel
+        //    {
+        //        Rights = rights,
+        //        Roles = roles.Values
+        //    };
 
-            //if (Request.Form["submitbutton"] == null || Request.Form["submitbutton"] != "Сохранить")
-            //    return View("RoleRights", model);
+        //    //if (Request.Form["submitbutton"] == null || Request.Form["submitbutton"] != "Сохранить")
+        //    //    return View("RoleRights", model);
 
-            var result = false;
-            if (rights.Any() && roles.Any())
-            {
-                var newChecked = Request.Form.AllKeys;
-                var toDelete = new List<RoleRight>();
-                var toAdd = new List<RoleRight>();
-                foreach (var role in roles.Values)
-                {
-                    foreach (var right in rights)
-                    {
-                        var inNewChecked = newChecked.Any(k => k == $"chk_{role.Id}_{right.Id}");
-                        var inOldChecked = role.Rights.Any(r => r.Id == right.Id);
+        //    var result = false;
+        //    if (rights.Any() && roles.Any())
+        //    {
+        //        var newChecked = Request.Form.AllKeys;
+        //        var toDelete = new List<RoleRight>();
+        //        var toAdd = new List<RoleRight>();
+        //        foreach (var role in roles.Values)
+        //        {
+        //            foreach (var right in rights)
+        //            {
+        //                var inNewChecked = newChecked.Any(k => k == $"chk_{role.Id}_{right.Id}");
+        //                var inOldChecked = role.Rights.Any(r => r.Id == right.Id);
 
-                        if (inNewChecked && inOldChecked)
-                            continue;
-                        if (inNewChecked)
-                            toAdd.Add(new RoleRight
-                            {
-                                IdRole = role.Id,
-                                IdRight = right.Id
-                            });
-                        else if (inOldChecked)
-                            toDelete.Add(new RoleRight
-                            {
-                                IdRole = role.Id,
-                                IdRight = right.Id
-                            });
-                    }
-                }
-                result = DbHelper.UpdateRoleRights(toAdd, toDelete, _repository.UserName);
-            }
-            if (result)
-            {
-                rights = DbHelper.GetAllRights(_repository.UserName);
-                roles = DbHelper.GetAllRoles(_repository.UserName);
-                if (rights == null || roles == null)
-                    return View(new RoleRightsViewModel());
+        //                if (inNewChecked && inOldChecked)
+        //                    continue;
+        //                if (inNewChecked)
+        //                    toAdd.Add(new RoleRight
+        //                    {
+        //                        IdRole = role.Id,
+        //                        IdRight = right.Id
+        //                    });
+        //                else if (inOldChecked)
+        //                    toDelete.Add(new RoleRight
+        //                    {
+        //                        IdRole = role.Id,
+        //                        IdRight = right.Id
+        //                    });
+        //            }
+        //        }
+        //        result = DbHelper.UpdateRoleRights(toAdd, toDelete, _repository.UserName);
+        //    }
+        //    if (result)
+        //    {
+        //        rights = DbHelper.GetAllRights(_repository.UserName);
+        //        roles = DbHelper.GetAllRoles(_repository.UserName);
+        //        if (rights == null || roles == null)
+        //            return View(new RoleRightsViewModel());
 
-                var modelNew = new RoleRightsViewModel
-                {
-                    Rights = rights,
-                    Roles = roles.Values
-                };
+        //        var modelNew = new RoleRightsViewModel
+        //        {
+        //            Rights = rights,
+        //            Roles = roles.Values
+        //        };
 
-                return View("RoleRights", modelNew);
-            }
-            else
-            {
-                ModelState.AddModelError("Db", "Роли пользователей не был изменены! Повторите попытку или свяжитесь с администратором.");
-                return View("RoleRights", model);
-            }
-        }
+        //        return View("RoleRights", modelNew);
+        //    }
+        //    else
+        //    {
+        //        ModelState.AddModelError("Db", "Роли пользователей не был изменены! Повторите попытку или свяжитесь с администратором.");
+        //        return View("RoleRights", model);
+        //    }
+        //}
 
 
     }

@@ -1,4 +1,5 @@
-﻿@model TerminalArchive.Domain.Models.User
+﻿@using TerminalArchive.Domain.DB
+@model TerminalArchive.Domain.Models.User
 
 @{
     ViewBag.Title = "Редактирование";
@@ -58,64 +59,72 @@
             {
                 @Html.Hidden(property.PropertyName)
             }
-            else
-            if (property.PropertyName == "Pass")
+            else if (property.PropertyName == "Pass")
             {
-                if (string.IsNullOrEmpty(Model.Name))
+                if (string.IsNullOrEmpty(Model.Name) || DbHelper.UserIsAdmin(User?.Identity?.Name))
                 {
                     <div class="form-group">
                         <label>@(property.DisplayName ?? property.PropertyName)</label>
                         <div class="col-md-10">
-                            @Html.Password(property.PropertyName, null, new { @class = "form-control" })
-                            @Html.ValidationMessage(property.PropertyName, "", new { @class = "text-danger" })
+                            @Html.Password(property.PropertyName, null, new {@class = "form-control"})
+                            @Html.ValidationMessage(property.PropertyName, "", new {@class = "text-danger"})
                         </div>
                     </div>
                 }
                 else
                 {
                     <div class="form-group">
-                        @Html.LabelFor(model => model.OldPass, htmlAttributes: new { @class = "control-label col-md-2" })
+                        @Html.LabelFor(model => model.OldPass, htmlAttributes: new {@class = "control-label col-md-2"})
                         <div class="col-md-10">
-                            @Html.PasswordFor(model => model.OldPass, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.OldPass, "", new { @class = "text-danger" })
+                            @Html.PasswordFor(model => model.OldPass, new {htmlAttributes = new {@class = "form-control"}})
+                            @Html.ValidationMessageFor(model => model.OldPass, "", new {@class = "text-danger"})
                         </div>
                     </div>
                     <div class="form-group">
                         <label>@(property.DisplayName ?? property.PropertyName)</label>
                         <div class="col-md-10">
-                            @Html.Password(property.PropertyName, null, new { @class = "form-control" })
-                            @Html.ValidationMessage(property.PropertyName, "", new { @class = "text-danger" })
+                            @Html.Password(property.PropertyName, null, new {@class = "form-control"})
+                            @Html.ValidationMessage(property.PropertyName, "", new {@class = "text-danger"})
                         </div>
                     </div>
                 }
             }
-            else
-            if (property.PropertyName == "Roles" && Model.Id != 0)
+            else if (property.PropertyName == "Roles" && Model.Id != 0)
             {
-                    <div class="form-group">
-                        <label>@(property.DisplayName ?? property.PropertyName)</label>
-                        <div class="col-md-10">
-                            @{
-                                var roles = Model.Roles != null && Model.Roles.Any() ? Model.Roles.Select(r=>r.Name).Aggregate((current, next) => current + ", " + next):" - ";
-                            }
-                            @Html.Label(roles, null, new {@class = "form-control"})
-                        </div>
-                    </div>
-                                }
-                                else
-            if (property.PropertyName != "OldPass" &&
-                property.PropertyName != "Roles")
-                                {
                 <div class="form-group">
                     <label>@(property.DisplayName ?? property.PropertyName)</label>
                     <div class="col-md-10">
-                        @Html.Editor(property.PropertyName, null, new { @class = "form-control" })
-                        @Html.ValidationMessage(property.PropertyName, "", new { @class = "text-danger" })
-                    </div>
+                        @{
+                            var roles = Model.Roles != null && Model.Roles.Any() ? Model.Roles.Select(r => r.Name).Aggregate((current, next) => current + ", " + next) : " - ";
+                        }
+                        @Html.Label(roles, null, new {@class = "form-control"})
+                     </div>
                 </div>
             }
+            else if (property.PropertyName == "Name")
+            {
+                if (Model.Id != 0)
+                {
+                    @Html.Hidden(property.PropertyName)
+                    <div class="form-group">
+                        <label>@(property.DisplayName ?? property.PropertyName)</label>
+                        <div class="col-md-10">
+                            @Html.TextBox(property.PropertyName, null, new { disabled = "disabled", @readonly = "readonly", @class = "form-control"})
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label>@(property.DisplayName ?? property.PropertyName)</label>
+                        <div class="col-md-10">
+                            @Html.Editor(property.PropertyName, null, new {@class = "form-control"})
+                            @Html.ValidationMessage(property.PropertyName, "", new {@class = "text-danger"})
+                        </div>
+                    </div>
+                }
+            }
         }
-
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Сохранить" class="btn btn-default" />

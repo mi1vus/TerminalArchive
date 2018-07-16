@@ -32,4 +32,10 @@ namespace TerminalArchive.WebUI.Models
         public ViewTerminal Terminal { get; set; }
         public PagingInfo PagingInfo { get; set; }
     }
+
+    public class TerminalParametersViewModel
+    {
+        public ViewTerminal Terminal { get; set; }
+        public IEnumerable<Parameter> Parameters { get; set; }
+    }
 }

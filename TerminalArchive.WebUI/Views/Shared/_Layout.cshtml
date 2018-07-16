@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using TerminalArchive.Domain.DB
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -12,6 +13,7 @@
         <a class="navbar-brand" href="#">Terminal archive - мониторинг бензо терминалов! </a>
         @{
             ViewBag.User = User?.Identity?.Name;
+            ViewBag.IsAdmin = DbHelper.UserIsAdmin(User?.Identity?.Name);
         }        
         @using (Html.BeginForm("Logout", "Account"))
         {
@@ -21,6 +23,9 @@
                     Вы вошли как: @ViewBag.User
                 </div>
                 <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <input type="submit" value="Сменить пароль" class="btn btn-default" name="submitButton" />
+                    </div>
                     <div class="col-md-offset-2 col-md-10">
                         <input type="submit" value="Выйти" class="btn btn-default" name="submitButton"/>
                     </div>
