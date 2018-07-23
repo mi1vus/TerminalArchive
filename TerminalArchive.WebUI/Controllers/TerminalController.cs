@@ -74,8 +74,13 @@ namespace TerminalArchive.WebUI.Controllers
         public ViewResult Details(int id, int page = 1)
         {
             _repository.UserName = User?.Identity?.Name;
-            //int page = 1;
+
+            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
             var terminal = _repository.GetTerminal(id, page, PageSize);
+            if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
+                return View("Unauthorize");
+
+            //int page = 1;
             //var tGrpIds =
             //    terminal.Groups.Values.Any()
             //        ? terminal.Groups.Values.Select(t => t.Id.ToString())
@@ -115,8 +120,14 @@ namespace TerminalArchive.WebUI.Controllers
         public ViewResult Parameters(int id)
          {
             _repository.UserName = User?.Identity?.Name;
+
+            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
             var terminal = _repository.GetTerminal(id);
+            if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
+                return View("Unauthorize");
+
             var parameters = DbHelper.GetAllParameters();
+
 
             var terminalsModel = new TerminalParametersViewModel
             {
@@ -150,7 +161,12 @@ namespace TerminalArchive.WebUI.Controllers
         public ViewResult Parameters(int id, Terminal term)
         {
             _repository.UserName = User?.Identity?.Name;
+
+            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
             var terminal = _repository.GetTerminal(id);
+            if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
+                return View("Unauthorize");
+
             var result = false;
 
             var toUpdate = new List<TerminalParameter>();
@@ -213,6 +229,7 @@ namespace TerminalArchive.WebUI.Controllers
                     Value = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.Value,
                     SaveTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.SaveTime ?? DateTime.MinValue,
                     LastEditTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.LastEditTime ?? DateTime.MinValue,
+                    Description = p.Description
                 }),
                 Terminal = new ViewTerminal(terminal)
                 {
@@ -378,7 +395,5 @@ namespace TerminalArchive.WebUI.Controllers
                 return View(group);
             }
         }
-
-
     }
 }

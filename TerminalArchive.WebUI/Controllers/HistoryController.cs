@@ -31,7 +31,12 @@ namespace TerminalArchive.WebUI.Controllers
         public ViewResult List(int id, int page = 1)
         {
             _repository.UserName = User?.Identity?.Name;
+
+            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
             var terminal = _repository.GetTerminal(id);
+            if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
+                return View("Unauthorize");
+
             var history = DbHelper.GetHistory(_repository.UserName, id, page, PageSize);
             var maxPages = 0;
             int totalItems = DbHelper.HistoryCount(_repository.UserName, id);
@@ -58,6 +63,5 @@ namespace TerminalArchive.WebUI.Controllers
 
             return View(terminalsModel);
         }
-
     }
 }

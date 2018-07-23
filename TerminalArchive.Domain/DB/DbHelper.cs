@@ -1305,7 +1305,7 @@ $@" ORDER BY p.id desc;";
                 var groups = GetUserGroups(userName, "Read", conn);
 
                 var sql =
-@" SELECT COUNT(id)  FROM `terminal_archive`.`history` AS h ";
+@" SELECT COUNT(h.id)  FROM `terminal_archive`.`history` AS h ";
                 if (groups != null && groups.Any())
                     sql +=
 @" LEFT JOIN terminal_archive.terminals AS t ON t.id = h.id_terminal ";
