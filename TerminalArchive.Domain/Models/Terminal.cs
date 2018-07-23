@@ -58,6 +58,7 @@ namespace TerminalArchive.Domain.Models
     public class TerminalParameter
     {
         public int IdTerminal { get; set; }
+        public int IdGroupTerminal { get; set; }
         public int IdParameter { get; set; }
         public string Value { get; set; }
     }
@@ -93,6 +94,8 @@ namespace TerminalArchive.Domain.Models
         public DateTime SaveTime { get; set; }
         [Display(Name = "Сохранен")]
         public bool Saved => SaveTime >= LastEditTime;
+        [Display(Name = "Описание")]
+        public string Description { get; set; }
     }
 
     public class Group

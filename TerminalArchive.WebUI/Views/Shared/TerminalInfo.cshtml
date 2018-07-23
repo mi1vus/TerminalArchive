@@ -1,0 +1,21 @@
+﻿@model TerminalArchive.WebUI.Models.ViewTerminal
+
+<h4>Терминал: @Model.Name</h4>
+<hr />
+<dl class="dl-horizontal"></dl>
+<div>
+    <h3>
+        @*<strong>
+                <p>
+                    @Html.ActionLink("Редактировать", "Edit", new { id = Model.Terminal.Id, page = Model.PagingInfo.CurrentPage })
+                </p>
+            </strong>*@
+        <span>Хасп: @Model.IdHasp</span><br/>
+    </h3>
+
+
+    <span>Адрес: @Model.Address</span><br/>
+    <span>Номера групп: @Model.GroupsIdsString</span><br/>
+    <span>Названия групп: @Model.GroupsNamesString</span><br/>
+</div>
+    

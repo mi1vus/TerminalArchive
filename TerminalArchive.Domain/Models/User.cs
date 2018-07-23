@@ -16,6 +16,7 @@ namespace TerminalArchive.Domain.Models
         public string OldPass { get; set; }
         [Display(Name = "Роли")]
         public List<Role> Roles { get; set; }
+        public List<Role> AllRoles { get; set; }
     }
 
     public class UserRole

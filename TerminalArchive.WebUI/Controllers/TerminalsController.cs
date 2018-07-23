@@ -5,7 +5,7 @@ using TerminalArchive.Domain.Models;
 
 namespace TerminalArchive.WebUI.Controllers
 {
-    public class TerminalsController : Controller
+    public class TerminalApiController : Controller
     {
         //public TerminalsController()
         //{
@@ -17,22 +17,16 @@ namespace TerminalArchive.WebUI.Controllers
         //    return DbHelper.GetParametersForUpdate("1", "2", "3");
         //}
 
-        [HttpGet]
-        [HttpPost]
-        public IEnumerable<Parameter> GetParameters(string HaspId, string User, string Pass)
+        public ActionResult GetParameters(string HaspId, string User, string Pass)
         {
-            return DbHelper.GetParametersForUpdate(HaspId, User, Pass);
+            return Json(DbHelper.GetParametersForUpdate(HaspId, User, Pass));
         }
 
-        [HttpGet]
-        [HttpPost]
         public int UpdateSaveDate(int TId, int ParId, string User, string Pass)
         {
             return DbHelper.UpdateSaveDate(TId, ParId, User, Pass);
         }
 
-        [HttpGet]
-        [HttpPost]
         public bool AddNewOrder(
             string RRN,
             string HaspId,

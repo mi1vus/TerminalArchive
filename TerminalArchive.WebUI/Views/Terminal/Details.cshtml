@@ -11,25 +11,9 @@
 
 <div class="well">
     <h2>Детальные данные</h2>
-    <h4>Терминал: @Model.Terminal.Name</h4>
-    <hr />
-    <dl class="dl-horizontal">
-    </dl>
-    <div>
-        <h3>
-            @*<strong>
-                <p>
-                    @Html.ActionLink("Редактировать", "Edit", new { id = Model.Terminal.Id, page = Model.PagingInfo.CurrentPage })
-                </p>
-            </strong>*@
-            <span>Хасп: @Model.Terminal.IdHasp</span><br />
-        </h3>
 
-
-        <span>Адрес: @Model.Terminal.Address</span><br/>
-        <span>Номера групп: @Model.Terminal.GroupsIdsString</span><br/>
-        <span>Названия групп: @Model.Terminal.GroupsNamesString</span><br/>
-        
+        @Html.Partial("TerminalInfo", Model.Terminal)
+       
         <div class="table col-md-8">
         @*<table>
             <thead>
@@ -97,4 +81,3 @@
             @Html.PageLinks(Model.PagingInfo, x => Url.Action("Details", new { page = x }))
         </div> 
    </div>
-</div>

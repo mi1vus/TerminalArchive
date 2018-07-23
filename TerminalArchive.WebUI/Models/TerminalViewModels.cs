@@ -10,6 +10,8 @@ namespace TerminalArchive.WebUI.Models
 
         public ViewTerminal(Terminal terminal)
         {
+            if (terminal == null)
+                return;
             Id = terminal.Id;
             Name = terminal.Name;
             Address = terminal.Address;

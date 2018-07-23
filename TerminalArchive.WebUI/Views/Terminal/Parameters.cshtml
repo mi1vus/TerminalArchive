@@ -8,30 +8,15 @@
 
 <div class="well">
     <h2>Параметры терминала</h2>
-    <h4>Терминал: @Model.Terminal.Name</h4>
-    <hr />
-    <dl class="dl-horizontal"></dl>
-    <div>
-        <h3>
-            @*<strong>
-                    <p>
-                        @Html.ActionLink("Редактировать", "Edit", new { id = Model.Terminal.Id, page = Model.PagingInfo.CurrentPage })
-                    </p>
-                </strong>*@
-            <span>Хасп: @Model.Terminal.IdHasp</span><br />
-        </h3>
 
-
-        <span>Адрес: @Model.Terminal.Address</span><br />
-        <span>Номера групп: @Model.Terminal.GroupsIdsString</span><br />
-        <span>Названия групп: @Model.Terminal.GroupsNamesString</span><br />
+    @Html.Partial("TerminalInfo", Model.Terminal)
 
 @using (Html.BeginForm())
 {
     @Html.AntiForgeryToken()
     <div class="table col-md-8">
-       @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-       <table>
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <table>
             <thead>
             <tr>
                 <th>Id параметра</th>
@@ -40,6 +25,7 @@
                 <th>Путь</th>
                 <th>Значение</th>
                 <th>Сохранен</th>
+                <th>Описание</th>
             </tr>
             </thead>
             <tbody>
@@ -51,32 +37,42 @@
                     <td>@parametr.Name</td>
                     <td>@parametr.Path</td>
                     <td>
-                        <div class="col-md-10">
-                            @Html.Editor("val_" + parametr.TId + "_" + parametr.Id, new {htmlAttributes = new { @Value = parametr.Value, @class = "form-control"} })
-                            @Html.ValidationMessage("val_" + parametr.TId + "_" + parametr.Id, "", new {@class = "text-danger"})
-                        </div>
+                        @if ((bool) ViewBag.CanEdit)
+                        {
+                            <div class="col-md-10">
+                                @Html.Editor("val_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup, new {htmlAttributes = new {@Value = parametr.Value, @class = "form-control"}})
+                                @Html.ValidationMessage("val_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup, "", new {@class = "text-danger"})
+                            </div>
+                        }
+                        else
+                        {
+                            @parametr.Value
+                        }
                     </td>
                     <td>@parametr.Saved</td>
+                    <td>@parametr.Description</td>
                 </tr>
             }
             </tbody>
         </table>
     </div>
-    <div class="form-group">
-        <div class="col-md-offset-2 col-md-10">
-            <input type="checkbox"
-                   id="all_in_group"
-                   name="all_in_group"/><span> Применить ко всем терминалам в группе</span>
+    if ((bool) ViewBag.CanEdit)
+    {
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="checkbox"
+                    id="all_in_group"
+                    name="all_in_group"/><span> Применить ко всем терминалам в группе</span>
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-offset-2 col-md-10">
-            <input type="submit" value="Сохранить" class="btn btn-default" />
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Сохранить" class="btn btn-primary"/>
+            </div>
         </div>
-    </div>
+    }
 }
     </div>
-</div>
 
 
 @*<h2>Parameters</h2>

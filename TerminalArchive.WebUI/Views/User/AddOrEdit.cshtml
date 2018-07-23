@@ -1,5 +1,7 @@
 ﻿@using TerminalArchive.Domain.DB
+@using TerminalArchive.Domain.Models
 @model TerminalArchive.Domain.Models.User
+    @*@model TerminalArchive.WebUI.Models.UserViewModel*@
 
 @{
     ViewBag.Title = "Редактирование";
@@ -89,16 +91,42 @@
                     </div>
                 }
             }
-            else if (property.PropertyName == "Roles" && Model.Id != 0)
+            else if (property.PropertyName == "Roles")
             {
                 <div class="form-group">
-                    <label>@(property.DisplayName ?? property.PropertyName)</label>
-                    <div class="col-md-10">
-                        @{
-                            var roles = Model.Roles != null && Model.Roles.Any() ? Model.Roles.Select(r => r.Name).Aggregate((current, next) => current + ", " + next) : " - ";
-                        }
-                        @Html.Label(roles, null, new {@class = "form-control"})
-                     </div>
+                    @if (Model.AllRoles != null && Model.AllRoles.Any())
+                    {
+                        <label>@(property.DisplayName ?? property.PropertyName)</label>
+                        <table class="table">
+                            <tr>
+                                <th>Роли</th>
+                            </tr>
+                            @foreach (var role in Model.AllRoles ?? new List<Role>())
+                            {
+                                <tr>
+                                    <td>
+                                        @role.Name
+                                        <input type="checkbox"
+                                               id="chk_@Model.Id.ToString()_@role.Id.ToString()"
+                                               name="chk_@Model.Id.ToString()_@role.Id.ToString()"
+                                               value="@(Model.Roles != null && Model.Roles.Any(r => r.Id == role.Id) ? "true" : "false")"
+                                               @(Model.Roles != null && Model.Roles.Any(r => r.Id == role.Id) ? "checked" : "")/>
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                    else if (Model.Id != 0)
+                    {
+                        <label>@(property.DisplayName ?? property.PropertyName)</label>
+                        <div class="col-md-10">
+                            @{
+                                var roles = Model.Roles != null && Model.Roles.Any() ? Model.Roles.Select(r => r.Name).Aggregate((current, next) => current + ", " + next) : " - ";
+                            }
+                            @*@Html.Label(roles.ToString(), null, new {@class = "form-control"})*@
+                            <label class = "form-control">@roles</label>
+                        </div>
+                    }
                 </div>
             }
             else if (property.PropertyName == "Name")
@@ -125,9 +153,13 @@
                 }
             }
         }
+        
+
+      
+
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Сохранить" class="btn btn-default" />
+                <input type="submit" value="Сохранить" class="btn btn-primary" />
             </div>
         </div>
     </div>

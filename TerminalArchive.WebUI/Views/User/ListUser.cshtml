@@ -7,7 +7,12 @@
 <h2>Пользователи</h2>
 
 <p>
-    @Html.ActionLink("Создать пользователя", "AddOrEdit")
+    @Html.ActionLink("Создать пользователя", "AddOrEdit", new {},
+        new
+        {
+            @class = "btn "
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        })
 </p>
 <table class="table">
     <tr>
@@ -29,7 +34,12 @@
             @Html.DisplayFor(modelItem => item.Pass)
         </td>*@
         <td>
-            @Html.ActionLink("Редактировать", "AddOrEdit", new { id=item.Id })
+            @Html.ActionLink("Редактировать", "AddOrEdit", new { id=item.Id },
+        new
+        {
+            @class = "btn btn-success"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        })
         </td>
     </tr>
 }

@@ -256,11 +256,10 @@
     <Content Include="Views\Nav\Menu.cshtml" />
     <Content Include="Views\Terminal\EditOld.cshtml" />
     <Content Include="Views\Terminal\Add.cshtml" />
-    <Content Include="Views\Terminal\Saved.cshtml" />
+    <Content Include="Views\Shared\Saved.cshtml" />
     <Content Include="Views\Terminal\Edit.cshtml" />
     <Content Include="Views\Terminal\Details.cshtml" />
     <Content Include="Views\User\UserRoles.cshtml" />
-    <Content Include="Views\User\Saved.cshtml" />
     <Content Include="Views\User\AddOrEdit.cshtml" />
     <Content Include="Views\User\ListUser.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
@@ -269,9 +268,10 @@
     <Content Include="Views\User\RoleRights.cshtml" />
     <Content Include="Views\Terminal\ListGroups.cshtml" />
     <Content Include="Views\Terminal\AddOrEditGroup.cshtml" />
-    <Content Include="Views\Terminal\Unauthorize.cshtml" />
+    <Content Include="Views\Shared\Unauthorize.cshtml" />
     <Content Include="Views\Terminal\Parameters.cshtml" />
     <Content Include="Views\History\List.cshtml" />
+    <Content Include="Views\Shared\TerminalInfo.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

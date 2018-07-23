@@ -18,7 +18,6 @@ namespace TerminalArchive.WebUI.Controllers
             _repository = new TerminalRepository { UserName = User?.Identity?.Name };
         }
 
-        [HttpPost]
         public bool AddHistory(
             string HaspId, string RRN,
             string Trace, string Msg, int? ErrorLevel, string Date,
@@ -32,6 +31,7 @@ namespace TerminalArchive.WebUI.Controllers
         public ViewResult List(int id, int page = 1)
         {
             _repository.UserName = User?.Identity?.Name;
+            var terminal = _repository.GetTerminal(id);
             var history = DbHelper.GetHistory(_repository.UserName, id, page, PageSize);
             var maxPages = 0;
             int totalItems = DbHelper.HistoryCount(_repository.UserName, id);
@@ -48,7 +48,12 @@ namespace TerminalArchive.WebUI.Controllers
                     ItemsPerPage = PageSize,
                     TotalItems = totalItems
                 },
-                History = history
+                History = history,
+                Terminal = new ViewTerminal(terminal)
+                {
+                    GroupsIdsString = terminal.IdGroup.ToString(),
+                    GroupsNamesString = terminal.Group?.Name
+                }
             };
 
             return View(terminalsModel);

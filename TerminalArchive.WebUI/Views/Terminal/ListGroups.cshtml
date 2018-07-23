@@ -7,7 +7,12 @@
 <h2>Группы</h2>
 
 <p>
-    @Html.ActionLink("Новая группа", "AddOrEditGroup")
+    @Html.ActionLink("Новая группа", "AddOrEditGroup",
+        new
+        {
+            @class = "btn "
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        })
 </p>
 <table class="table">
     <tr>
@@ -23,7 +28,12 @@
             @Html.DisplayFor(modelItem => item.Name)
         </td>
         <td>
-            @Html.ActionLink("Редактировать", "AddOrEditGroup", new { id=item.Id })
+            @Html.ActionLink("Редактировать", "AddOrEditGroup", new { id=item.Id },
+        new
+        {
+            @class = "btn btn-success"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        })
         </td>
     </tr>
 }

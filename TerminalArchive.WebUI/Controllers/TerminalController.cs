@@ -129,6 +129,7 @@ namespace TerminalArchive.WebUI.Controllers
                     Value = terminal?.Parameters?.FirstOrDefault(tp=>tp.Id == p.Id)?.Value,
                     SaveTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.SaveTime ?? DateTime.MinValue,
                     LastEditTime = terminal?.Parameters?.FirstOrDefault(tp => tp.Id == p.Id)?.LastEditTime ?? DateTime.MinValue,
+                    Description = p.Description
                 }),
                 Terminal = new ViewTerminal(terminal)
                 {
@@ -137,7 +138,10 @@ namespace TerminalArchive.WebUI.Controllers
                 }
             };
 
-
+            ViewBag.CanEdit = 
+                DbHelper.UserIsAdmin(User?.Identity?.Name)
+                || DbHelper.UserInRole(User?.Identity?.Name,"Write", terminal.IdGroup)
+                || DbHelper.UserInRole(User?.Identity?.Name, "Write", null);
             return View(terminalsModel);
         }
 
@@ -160,10 +164,12 @@ namespace TerminalArchive.WebUI.Controllers
                     var keyParts = k.Split(new[] {'_'}, StringSplitOptions.RemoveEmptyEntries);
                     int idTerminal = int.Parse(keyParts[1]);
                     int idParameter = int.Parse(keyParts[2]);
+                    int idGroup = int.Parse(keyParts[3]);
                     var newPar = new TerminalParameter
                     {
                         IdTerminal = idTerminal,
                         IdParameter = idParameter,
+                        IdGroupTerminal = idGroup,
                         Value = Request.Form[k]
                     };
                     toUpdate.Add(newPar);
@@ -172,20 +178,22 @@ namespace TerminalArchive.WebUI.Controllers
 
             if (allInGroup)
             {
-                var terminalIds = _repository.Terminals.Where(t=>t.IdGroup == terminal.IdGroup && t.Id != id).Select(t=>t.Id);
+                var terminalsToUpd = _repository.Terminals.Where(t=>t.IdGroup == terminal.IdGroup && t.Id != id);
                 var srcParams = toUpdate.ToArray();
-                foreach (var tId in terminalIds)
+                foreach (var termToUpd in terminalsToUpd)
                     toUpdate.AddRange(srcParams.Select(tp=>new TerminalParameter
                     {
                         IdParameter = tp.IdParameter,
-                        IdTerminal = tId,
+                        IdTerminal = termToUpd.Id,
+                        IdGroupTerminal = termToUpd.IdGroup,
                         Value = tp.Value
                     }));
-                result = DbHelper.UpdateTerminalParameters(toUpdate);
+                result = DbHelper.UpdateTerminalParameters(toUpdate, _repository.UserName);
             }else
                 result = DbHelper.UpdateTerminalParameters(
                     toUpdate.Where(toUpdadePar=>!string.IsNullOrWhiteSpace(toUpdadePar.Value)
-                    && terminal?.Parameters?.FirstOrDefault(termParam => termParam.Id == toUpdadePar.IdParameter)?.Value != toUpdadePar.Value));
+                    && terminal?.Parameters?.FirstOrDefault(termParam => termParam.Id == toUpdadePar.IdParameter)?.Value != toUpdadePar.Value)
+                    , _repository.UserName);
 
             if (!result)
                 ModelState.AddModelError("Db",
@@ -212,11 +220,16 @@ namespace TerminalArchive.WebUI.Controllers
                     GroupsNamesString = terminal.Group?.Name
                 }
             };
+            ViewBag.CanEdit =
+                DbHelper.UserIsAdmin(User?.Identity?.Name)
+                || DbHelper.UserInRole(User?.Identity?.Name, "Write", terminal.IdGroup)
+                || DbHelper.UserInRole(User?.Identity?.Name, "Write", null);
+
             return View(terminalsModel);
         }
 
         [Authorize]
-        public ViewResult Edit(int id, int page)
+        public ViewResult Edit(int id, int page = 0)
         {
             if (!DbHelper.UserIsAdmin(User?.Identity?.Name))
                 return View("Unauthorize");
@@ -259,7 +272,7 @@ namespace TerminalArchive.WebUI.Controllers
 
         [Authorize]
         [HttpPost]
-        public ViewResult Edit(Terminal terminalMod, int id, int page)
+        public ViewResult Edit(Terminal terminalMod, int id, int page = 0)
         {
             if (!DbHelper.UserIsAdmin(User?.Identity?.Name))
                 return View("Unauthorize");

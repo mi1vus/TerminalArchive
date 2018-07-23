@@ -19,14 +19,20 @@ namespace TerminalArchive.WebUI.Controllers
 
             if (ModelState.IsValid)
             {
-                if (DbHelper.IsAuthorizeUser(model.UserName, model.Password))
+                var authorize = DbHelper.IsAuthorizeUser(model.UserName, model.Password);
+                if (authorize != null && authorize.Value)
                 {
                     FormsAuthentication.SetAuthCookie(model.UserName, false);
                     return Redirect(returnUrl ?? Url.Action("List", "TerminalMonitoring"));
                 }
-                else
+                else if (authorize == null)
                 {
                     ModelState.AddModelError("", "Неправильный логин или пароль");
+                    return View();
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Вы забанены!");
                     return View();
                 }
             }
@@ -47,7 +53,7 @@ namespace TerminalArchive.WebUI.Controllers
             else
             if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Сменить пароль")
             {
-                var userId = DbHelper.GetUsersId(User?.Identity?.Name);
+                var userId = DbHelper.GetUsersId(User?.Identity?.Name, User?.Identity?.Name);
                 return Redirect(Url.Action("AddOrEdit", "User", new {id = userId }));
             }
 

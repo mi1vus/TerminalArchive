@@ -8,21 +8,23 @@
 
     <h2>История</h2>
 
-    <div class="table col-md-8">
-        <table>
-            <thead>
-                <tr>
-                    <th>Id записи</th>
-                    <th>Дата</th>
-                    <th>Терминал</th>
-                    <th>Заказ</th>
-                    <th>Состояние</th>
-                    <th>Источник</th>
-                    <th>Сообщение</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var order in Model.History)
+    @Html.Partial("TerminalInfo", Model.Terminal)
+
+        <div class="table col-md-8">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Id записи</th>
+                        <th>Дата</th>
+                        <th>Терминал</th>
+                        <th>Заказ</th>
+                        <th>Состояние</th>
+                        <th>Источник</th>
+                        <th>Сообщение</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.History)
             {
                     <tr>
                         <td>@order.Id</td>
@@ -33,15 +35,14 @@
                         <td>@order.Trace</td>
                         <td>@order.Message</td>
                     </tr>
-                }
-            </tbody>
-        </table>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="btn-group pull-right">
+            @Html.PageLinks(Model.PagingInfo, x => Url.Action("List", new { page = x }))
+        </div>
     </div>
-    <div class="btn-group pull-right">
-        @Html.PageLinks(Model.PagingInfo, x => Url.Action("List", new { page = x }))
-    </div>
-</div>
-
 
 
 
