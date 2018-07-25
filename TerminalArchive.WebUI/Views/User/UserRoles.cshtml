@@ -16,12 +16,52 @@
 
         <table class="table">
             <tr>
-                <th>Польз.\Роли</th>
-            @foreach (var role in Model.Roles)
-            {
-                <th>@role.Name [@role.IdGroup]</th>
-            }
+                <th rowspan="2" style="vertical-align:middle">Польз.\Роли</th>
+                @{
+                    int last_gr_id = 0;
+                }
+                @foreach (var role in Model.Roles)
+                {
+                    if (role.IdGroup == null)
+                    {
+                        <th rowspan="2"  style="vertical-align:middle">@role.Name</th>
+                    }
+                    else
+                    {
+                        if (last_gr_id != role.IdGroup)
+                        {
+                            last_gr_id = role.IdGroup??0;
+
+                            <th rowspan="1" colspan="2" style="text-align : center">@($"{role.GroupName}")</th>
+                        }
+                    }
+                }
             </tr>
+            <tr>
+             
+                @foreach (var role in Model.Roles)
+                {
+                    if (role.IdGroup != null)
+                    {
+                        <th>@if (role.Name.StartsWith("Чит"))
+                            {
+                                <p>Чтение</p>
+                            }
+                            else
+                            {
+                                <p>Запись</p>
+                            }
+                       </th>
+                    }
+                }
+            </tr>
+            @*<tr>
+                <th>Польз.\Роли</th>
+                @foreach (var role in Model.Roles)
+                {
+                    <th>@role.Name @((role.IdGroup != null) ? $"[{role.IdGroup}]" : "")</th>
+                }
+            </tr>*@
 
         @foreach (var user in Model.Users.Where(u => u.Roles != null))
         {

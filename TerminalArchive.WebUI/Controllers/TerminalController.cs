@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Web.Mvc;
 using TerminalArchive.Domain.Abstract;
 using TerminalArchive.Domain.DB;
@@ -13,7 +12,7 @@ namespace TerminalArchive.WebUI.Controllers
     public class TerminalController : Controller
     {
         private readonly ITerminalRepository _repository;
-        public int PageSize = 2;
+        public int PageSize = 10;
 
         public TerminalController()
         {
@@ -35,7 +34,7 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
             var groups = new List<Group> { new Group { Id = -1, Name = "None"} };
-            groups.AddRange(groupsAll);
+            groups.AddRange(groupsAll.Values);
             ViewBag.Groups = groups;
                 //DbHelper.GetUserGroups(_repository.UserName);
                     //.Select(t => new SelectListItem {Value = t.Id.ToString(), Text = t.Name});
@@ -52,7 +51,7 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
             var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
-            groups.AddRange(groupsAll);
+            groups.AddRange(groupsAll.Values);
             ViewBag.Groups = groups;
 
             if (ModelState.IsValid)
@@ -126,9 +125,8 @@ namespace TerminalArchive.WebUI.Controllers
             if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
                 return View("Unauthorize");
 
-            var parameters = DbHelper.GetAllParameters();
-
-
+            var parameters = DbHelper.GetAllParameters(terminal.IdGroup);
+            
             var terminalsModel = new TerminalParametersViewModel
             {
                 Parameters = parameters.Select(p=>new Parameter
@@ -169,54 +167,99 @@ namespace TerminalArchive.WebUI.Controllers
 
             var result = false;
 
-            var toUpdate = new List<TerminalParameter>();
-            bool allInGroup = false;
+            var toUpdate = new Dictionary<Tuple<int, int>, TerminalParameter>();
             foreach (var k in Request.Form.AllKeys)
             {
-                if (k == "all_in_group")
-                    allInGroup = true;
-                else if(k.StartsWith("val"))
+                if (k.StartsWith("all"))
                 {
                     var keyParts = k.Split(new[] {'_'}, StringSplitOptions.RemoveEmptyEntries);
                     int idTerminal = int.Parse(keyParts[1]);
                     int idParameter = int.Parse(keyParts[2]);
+                    var key = new Tuple<int, int>(idTerminal, idParameter);
                     int idGroup = int.Parse(keyParts[3]);
-                    var newPar = new TerminalParameter
+                    if (toUpdate.ContainsKey(key))
                     {
-                        IdTerminal = idTerminal,
-                        IdParameter = idParameter,
-                        IdGroupTerminal = idGroup,
-                        Value = Request.Form[k]
-                    };
-                    toUpdate.Add(newPar);
+                        var newVal = toUpdate[key];
+                        newVal.ToAllGroups = true;
+                        toUpdate[key] = newVal;
+                    }
+                    else
+                    {
+                        var newPar = new TerminalParameter
+                        {
+                            IdTerminal = idTerminal,
+                            IdParameter = idParameter,
+                            IdGroupTerminal = idGroup,
+                            ToAllGroups = true,
+                        };
+                        toUpdate.Add(key, newPar);
+                    }
+                }
+                else if (k.StartsWith("val"))
+                {
+                    var keyParts = k.Split(new[] {'_'}, StringSplitOptions.RemoveEmptyEntries);
+                    int idTerminal = int.Parse(keyParts[1]);
+                    int idParameter = int.Parse(keyParts[2]);
+                    var key = new Tuple<int, int>(idTerminal, idParameter);
+                    int idGroup = int.Parse(keyParts[3]);
+                    if (toUpdate.ContainsKey(key))
+                    {
+                        var newVal = toUpdate[key];
+                        newVal.Value = Request.Form[k];
+                        toUpdate[key] = newVal;
+                    }
+                    else
+                    {
+                        var newPar = new TerminalParameter
+                        {
+                            IdTerminal = idTerminal,
+                            IdParameter = idParameter,
+                            IdGroupTerminal = idGroup,
+                            Value = Request.Form[k]
+                        };
+                        toUpdate.Add(key, newPar);
+                    }
                 }
             }
 
-            if (allInGroup)
+            if (toUpdate.Values.Any(par => par.ToAllGroups))
             {
-                var terminalsToUpd = _repository.Terminals.Where(t=>t.IdGroup == terminal.IdGroup && t.Id != id);
-                var srcParams = toUpdate.ToArray();
+                var terminal1 = terminal;
+                var terminalsToUpd = _repository.Terminals.Where(t => t.IdGroup == terminal1.IdGroup && t.Id != id);
+                var srcParams = toUpdate.Values.Where(par => par.ToAllGroups).ToArray();
                 foreach (var termToUpd in terminalsToUpd)
-                    toUpdate.AddRange(srcParams.Select(tp=>new TerminalParameter
-                    {
-                        IdParameter = tp.IdParameter,
-                        IdTerminal = termToUpd.Id,
-                        IdGroupTerminal = termToUpd.IdGroup,
-                        Value = tp.Value
-                    }));
-                result = DbHelper.UpdateTerminalParameters(toUpdate, _repository.UserName);
-            }else
-                result = DbHelper.UpdateTerminalParameters(
-                    toUpdate.Where(toUpdadePar=>!string.IsNullOrWhiteSpace(toUpdadePar.Value)
-                    && terminal?.Parameters?.FirstOrDefault(termParam => termParam.Id == toUpdadePar.IdParameter)?.Value != toUpdadePar.Value)
-                    , _repository.UserName);
+                    foreach (var parToUpd in srcParams.Select(tp => new TerminalParameter
+                        {
+                            IdParameter = tp.IdParameter,
+                            IdTerminal = termToUpd.Id,
+                            IdGroupTerminal = termToUpd.IdGroup,
+                            Value = tp.Value,
+                            ToAllGroups = tp.ToAllGroups,
+                    })
+                    )
+                        toUpdate.Add(new Tuple<int, int>(parToUpd.IdTerminal, parToUpd.IdParameter), parToUpd);
+                result = DbHelper.UpdateTerminalParameters(toUpdate.Values.Where(par => par.ToAllGroups), _repository.UserName);
+            }
+            else
+                result = true;
 
+            if (result && toUpdate.Values.Any(par => !par.ToAllGroups))
+            {
+                var terminal1 = terminal;
+                result = DbHelper.UpdateTerminalParameters(
+                    toUpdate.Values.Where(toUpdadePar => /*!string.IsNullOrWhiteSpace(toUpdadePar.Value) &&*/
+                        !toUpdadePar.ToAllGroups &&
+                        terminal1?.Parameters?.FirstOrDefault(
+                            termParam => termParam.Id == toUpdadePar.IdParameter)?.Value !=
+                        toUpdadePar.Value)
+                    , _repository.UserName);
+            }
             if (!result)
                 ModelState.AddModelError("Db",
                     "Параметры терминала не были изменены! Повторите попытку или свяжитесь с администратором.");
 
             terminal = _repository.GetTerminal(id);
-            var parameters = DbHelper.GetAllParameters();
+            var parameters = DbHelper.GetAllParameters(terminal.IdGroup);
 
             var terminalsModel = new TerminalParametersViewModel
             {
@@ -254,7 +297,7 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
             var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
-            groups.AddRange(groupsAll);
+            groups.AddRange(groupsAll.Values);
             ViewBag.Groups = groups;
 
             //int page = 1;
@@ -297,7 +340,7 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             var groupsAll = DbHelper.GetAllGroups(_repository.UserName);
             var groups = new List<Group> { new Group { Id = -1, Name = "None" } };
-            groups.AddRange(groupsAll);
+            groups.AddRange(groupsAll.Values);
             ViewBag.Groups = groups;
 
             var terminal = _repository.GetTerminal(id, page, PageSize);
@@ -350,7 +393,7 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             var groups = DbHelper.GetAllGroups(_repository.UserName);
 
-            return View(groups);
+            return View(groups.Values);
         }
         [Authorize]
         public ActionResult AddOrEditGroup(int id = 0)
@@ -359,41 +402,98 @@ namespace TerminalArchive.WebUI.Controllers
                 return View("Unauthorize");
 
             _repository.UserName = User?.Identity?.Name;
+            var allParameters = DbHelper.GetAllParameters(0);
 
             if (id != 0)
             {
                 var groups = DbHelper.GetAllGroups(_repository.UserName);
-                return View(groups.Single(g => g.Id == id));
+                var group = groups.Values.Single(g => g.Id == id);
+                group.AllParameters = allParameters ?? new List<Parameter>();
+                return View(group);
             }
             else
-                return View(new Group());
+                return View(new Group {AllParameters = allParameters ?? new List<Parameter>() });
         }
 
         [Authorize]
         [HttpPost]
         public ActionResult AddOrEditGroup(int id = 0, Group group = null)
         {
+            var allParameters = DbHelper.GetAllParameters(0);
+            if (group == null) return View(new Group { AllParameters = allParameters ?? new List<Parameter>() });
             if (!DbHelper.UserIsAdmin(User?.Identity?.Name))
                 return View("Unauthorize");
 
             _repository.UserName = User?.Identity?.Name;
+            group.AllParameters = allParameters ?? new List<Parameter>();
 
-            if (ModelState.IsValid && group != null)
+            if (!ModelState.IsValid) return View(group);
+
+            var res = group.Id != 0
+                ? DbHelper.EditGroup(group.Id, group.Name, _repository.UserName)
+                : DbHelper.AddGroup(group.Name, _repository.UserName);
+            if (!res)
             {
-                var res = group.Id != 0
-                    ? DbHelper.EditGroup(group.Id, group.Name, _repository.UserName)
-                    : DbHelper.AddGroup(group.Name, _repository.UserName);
-                if (!res)
-                {
-                    ModelState.AddModelError("Db", "Группа не была добавлена! Повторите попытку или свяжитесь с администратором.");
-                    return View(group);
-                }
-                return View("Saved");
-            }
-            else
-            {
+                ModelState.AddModelError("Db", "Группа не была добавлена! Повторите попытку или свяжитесь с администратором.");
                 return View(group);
             }
+
+            var groups = DbHelper.GetAllGroups(_repository.UserName);
+            group = groups.Values.Single(g => g.Id == id);
+            group.AllParameters = allParameters ?? new List<Parameter>();
+            var result = false;
+
+            if (allParameters != null && allParameters.Any())
+            {
+                var newChecked = Request.Form.AllKeys;
+                var toDelete = new List<ParameterGroup>();
+                var toAdd = new List<ParameterGroup>();
+                foreach (var parameter in allParameters)
+                {
+                    var inNewChecked = newChecked.Any(k => k == $"chk_{parameter.Id}_{group.Id}");
+                    var inOldChecked = group.Parameters.Any(p => p.Id == parameter.Id);
+
+                    if (inNewChecked && inOldChecked)
+                        continue;
+                    if (inNewChecked)
+                        toAdd.Add(new ParameterGroup
+                        {
+                            IdParameter = parameter.Id,
+                            IdGroup = group.Id
+                        });
+                    else if (inOldChecked)
+                        toDelete.Add(new ParameterGroup
+                        {
+                            IdParameter = parameter.Id,
+                            IdGroup = group.Id
+                        });
+                }
+                if (toAdd.Any() || toDelete.Any())
+                    result = DbHelper.UpdateParameterGroups(toAdd, toDelete, _repository.UserName);
+                else
+                    result = true;
+            }
+            else
+                return View("Saved");
+
+            if (result)
+            {
+                //user = DbHelper.GetUser(_repository.UserName);
+                //roles = DbHelper.GetAllRoles(_repository.UserName);
+                //if (users == null || roles == null)
+                //    return View(new UserRolesViewModel());
+
+                //var modelNew = new UserViewModel
+                //{
+                //    User = users.Values,
+                //    Roles = roles.Values
+                //};
+
+                return View("Saved");
+            }
+
+            ModelState.AddModelError("Db", "Параметры группы не были изменены! Повторите попытку или свяжитесь с администратором.");
+            return View(group);
         }
     }
 }

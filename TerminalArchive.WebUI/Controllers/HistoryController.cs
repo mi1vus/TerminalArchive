@@ -3,7 +3,6 @@ using System.Linq;
 using System.Web.Mvc;
 using TerminalArchive.Domain.Abstract;
 using TerminalArchive.Domain.DB;
-using TerminalArchive.Domain.Models;
 using TerminalArchive.WebUI.Models;
 
 namespace TerminalArchive.WebUI.Controllers
@@ -11,7 +10,7 @@ namespace TerminalArchive.WebUI.Controllers
     public class HistoryController : Controller
     {
         private readonly ITerminalRepository _repository;
-        public int PageSize = 2;
+        public int PageSize = 10;
 
         public HistoryController()
         {

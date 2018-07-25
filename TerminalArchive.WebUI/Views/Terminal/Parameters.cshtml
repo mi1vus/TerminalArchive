@@ -24,6 +24,10 @@
                 <th>Название</th>
                 <th>Путь</th>
                 <th>Значение</th>
+                @if ((bool) ViewBag.CanEdit)
+                {
+                    <th>Применить ко всем терминалам в группе</th>
+                }
                 <th>Сохранен</th>
                 <th>Описание</th>
             </tr>
@@ -37,11 +41,11 @@
                     <td>@parametr.Name</td>
                     <td>@parametr.Path</td>
                     <td>
-                        @if ((bool) ViewBag.CanEdit)
+                        @if ((bool)ViewBag.CanEdit)
                         {
                             <div class="col-md-10">
-                                @Html.Editor("val_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup, new {htmlAttributes = new {@Value = parametr.Value, @class = "form-control"}})
-                                @Html.ValidationMessage("val_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup, "", new {@class = "text-danger"})
+                                @Html.Editor("val_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup, new { htmlAttributes = new { @Value = parametr.Value, @class = "form-control" } })
+                                @Html.ValidationMessage("val_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup, "", new { @class = "text-danger" })
                             </div>
                         }
                         else
@@ -49,6 +53,16 @@
                             @parametr.Value
                         }
                     </td>
+                    @if ((bool)ViewBag.CanEdit)
+                    {
+                        <td>
+                            <div class="col-md-10">
+                                <input type="checkbox"
+                                       id="all_in_group"
+                                       name=@("all_" + parametr.TId + "_" + parametr.Id + "_" + Model.Terminal.IdGroup) />
+                            </div>
+                        </td>
+                    }
                     <td>@parametr.Saved</td>
                     <td>@parametr.Description</td>
                 </tr>
@@ -58,13 +72,13 @@
     </div>
     if ((bool) ViewBag.CanEdit)
     {
-        <div class="form-group">
+        @*<div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <input type="checkbox"
                     id="all_in_group"
                     name="all_in_group"/><span> Применить ко всем терминалам в группе</span>
             </div>
-        </div>
+        </div>*@
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Сохранить" class="btn btn-primary"/>

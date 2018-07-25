@@ -61,6 +61,7 @@ namespace TerminalArchive.Domain.Models
         public int IdGroupTerminal { get; set; }
         public int IdParameter { get; set; }
         public string Value { get; set; }
+        public bool ToAllGroups { get; set; }
     }
 
     public class AdditionalParameter
@@ -98,11 +99,20 @@ namespace TerminalArchive.Domain.Models
         public string Description { get; set; }
     }
 
+    public class ParameterGroup
+    {
+        public int IdGroup { get; set; }
+        public int IdParameter { get; set; }
+    }
+
     public class Group
     {
         public int Id { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите название группы!")]
         [Display(Name = "Имя")]
         public string Name { get; set; }
+        [Display(Name = "Параметры")]
+        public List<Parameter> Parameters { get; set; }
+        public List<Parameter> AllParameters { get; set; }
     }
 }

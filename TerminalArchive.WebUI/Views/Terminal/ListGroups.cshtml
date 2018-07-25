@@ -6,14 +6,14 @@
 
 <h2>Группы</h2>
 
-<p>
-    @Html.ActionLink("Новая группа", "AddOrEditGroup",
+@*<p>
+    @Html.ActionLink("Новая группа", "AddOrEditGroup", new {},
         new
         {
-            @class = "btn "
+            @class = "btn btn-primary"
             + ("" == ViewBag.CurrentController ? " btn-primary" : "")
         })
-</p>
+</p>*@
 <table class="table">
     <tr>
         <th>
@@ -37,5 +37,18 @@
         </td>
     </tr>
 }
+    <tr>
+        <td>
+         
+        </td>
+        <td>
+            @Html.ActionLink("Новая группа", "AddOrEditGroup", new { },
+        new
+        {
+            @class = "btn btn-primary"
+            + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+        })
+        </td>
+    </tr>
 
 </table>

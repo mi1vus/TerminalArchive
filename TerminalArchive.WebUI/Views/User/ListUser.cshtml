@@ -6,14 +6,14 @@
 
 <h2>Пользователи</h2>
 
-<p>
+@*<p>
     @Html.ActionLink("Создать пользователя", "AddOrEdit", new {},
         new
         {
             @class = "btn "
             + ("" == ViewBag.CurrentController ? " btn-primary" : "")
         })
-</p>
+</p>*@
 <table class="table">
     <tr>
         <th>
@@ -43,5 +43,15 @@
         </td>
     </tr>
 }
-
+    <tr>
+        <td></td>
+        <td>
+            @Html.ActionLink("Создать пользователя", "AddOrEdit", new { },
+            new
+            {
+                @class = "btn btn-primary"
+                + ("" == ViewBag.CurrentController ? " btn-primary" : "")
+            })
+        </td>
+    </tr>
 </table>

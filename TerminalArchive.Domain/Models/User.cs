@@ -30,6 +30,7 @@ namespace TerminalArchive.Domain.Models
         public int Id { get; set; }
         [Display(Name = "Принадлежность к группе терминалов")]
         public int? IdGroup { get; set; }
+        public string GroupName { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите имя роли!")]
         [Display(Name = "Имя")]
         public string Name { get; set; }

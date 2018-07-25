@@ -164,7 +164,7 @@ namespace TerminalArchive.WebUI.Controllers
             _repository.UserName = User?.Identity?.Name;
             var roles = DbHelper.GetAllRoles(_repository.UserName);
 
-            if (user == null) return View(new User());
+            if (user == null) return View(new User {AllRoles = roles?.Values.ToList() ?? new List<Role>() });
 
             if (!DbHelper.UserIsAdmin(_repository.UserName) && user.Name != _repository.UserName)
                 return View("Unauthorize");

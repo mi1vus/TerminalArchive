@@ -58,6 +58,16 @@ CREATE TABLE IF NOT EXISTS `terminal_archive`.`terminal_parameters` (
   FOREIGN KEY (`id_parameter`) REFERENCES `terminal_archive`.`parameters`(`id`)
 );
 
+CREATE TABLE IF NOT EXISTS `terminal_archive`.`parameter_groups` (
+  /*`id` INT NOT NULL AUTO_INCREMENT,*/
+  `id_parameter` INT NOT NULL,
+  `id_group` INT NOT NULL,
+  PRIMARY KEY (`id_parameter`,`id_group`),
+  /*UNIQUE INDEX `parameter_groups_UNIQUE` (`id_parameter` ASC,`id_group` ASC),*/
+  FOREIGN KEY (`id_parameter`) REFERENCES `terminal_archive`.`parameters`(`id`),
+  FOREIGN KEY (`id_group`) REFERENCES `terminal_archive`.`groups`(`id`)
+);
+
 CREATE TABLE IF NOT EXISTS `terminal_archive`.`order_fuels` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
@@ -246,6 +256,16 @@ INSERT INTO `terminal_archive`.`parameters` (`id`, `path`, `name`, `description`
 INSERT INTO `terminal_archive`.`terminal_parameters` (`id_terminal`, `id_parameter`, `value`) VALUES 
 ('1', '1', 'Терминал 2'),
 ('1', '2', '192.168.0.100');
+
+INSERT INTO `terminal_archive`.`parameter_groups` (`id_parameter`, `id_group`) VALUES 
+ ('1', '1'),
+ ('2', '1'),
+ ('3', '1'),
+ ('1', '2'),
+ ('3', '2'),
+ ('4', '2'),
+ ('4', '3'),
+ ('2', '4');
 
 INSERT INTO `terminal_archive`.`order_fuels` (`id`,`name`) VALUES 
 ('1', '-'),

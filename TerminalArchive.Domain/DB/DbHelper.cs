@@ -30,10 +30,17 @@ namespace TerminalArchive.Domain.DB
                 ConnStr = customSetting.Value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="password"></param>
+        /// <param name="contextConn"></param>
+        /// <returns>true - authorize, false - banned, null - no user or pass </returns>
         public static bool? IsAuthorizeUser(string name, string password, MySqlConnection contextConn = null)
         {
             if (string.IsNullOrWhiteSpace(name))
-                return false;
+                return null;
 
             bool? users = null;
             var conn = contextConn ?? new MySqlConnection(ConnStr);
@@ -121,6 +128,14 @@ $@" SELECT MIN(rg.name not like 'None') FROM terminal_archive.users AS u
             return users;
         }
 
+        /// <summary>
+        /// Existance role for current group (include null)
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="role"></param>
+        /// <param name="group"></param>
+        /// <param name="contextConn"></param>
+        /// <returns></returns>
         public static bool UserInRole(string name, string role, int? group, MySqlConnection contextConn = null)
         {
             var users = 0;
@@ -187,6 +202,13 @@ $@" SELECT MIN(rg.name not like 'None') FROM terminal_archive.users AS u
             return result;
         }
 
+        /// <summary>
+        /// groups accessed for this right
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="right"></param>
+        /// <param name="contextConn"></param>
+        /// <returns>empty list - allow all groups, null - no access to datas, collection - access only for this group</returns>
         public static List<Group> GetUserGroups(string name, string right, MySqlConnection contextConn = null)
         {
             var result = new List<Group>();
@@ -240,9 +262,9 @@ WHERE u.name = '{name}' AND rg.name = '{right}'; ";
             return result;
         }
 
-        public static List<Group> GetAllGroups(string user)
+        public static Dictionary<int, Group> GetAllGroups(string user)
         {
-            var allGroups = new List<Group>();
+            var allGroups = new Dictionary<int, Group>();
             var conn = new MySqlConnection(ConnStr);
             try
             {
@@ -251,8 +273,10 @@ WHERE u.name = '{name}' AND rg.name = '{right}'; ";
                 var groups = GetUserGroups(user, "Read", conn);
 
                 string sql =
-@" SELECT g.`id`, g.name
- FROM terminal_archive.groups AS g ";
+@" SELECT g.`id`, g.name, p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра`
+ FROM terminal_archive.groups AS g 
+ LEFT JOIN terminal_archive.parameter_groups AS pg ON pg.id_group = g.id 
+ LEFT JOIN terminal_archive.parameters AS p ON pg.id_parameter = p.id ";
                 if (groups != null && groups.Any())
                 {
                     var groupStr = groups.Select(t => t.Id.ToString())
@@ -268,12 +292,28 @@ $@" WHERE g.id in ( {groupStr} ) ";
 @" ORDER BY g.id asc; ";
                 MySqlCommand command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
+
                 while (dataReader.HasRows && dataReader.Read())
                 {
-                    allGroups.Add(new Group()
+                    var idGroup = dataReader.GetInt32(0);
+                    if (!allGroups.ContainsKey(idGroup))
                     {
-                        Id = dataReader.GetInt32(0),
-                        Name = dataReader.GetString(1),
+                        allGroups[idGroup] = new Group()
+                        {
+                            Id = idGroup,
+                            Name = dataReader.GetString(1),
+                            Parameters = new List<Parameter>(),
+                        };
+                    }
+
+                    if (dataReader.IsDBNull(2)) continue;
+
+                    var pId = dataReader.GetInt32(2);
+                    allGroups[idGroup].Parameters.Add(new Parameter
+                    {
+                        Id = pId,
+                        Name = dataReader.GetString(3),
+                        Path = dataReader.GetString(4),
                     });
                 }
             }
@@ -432,11 +472,12 @@ $@" AND u.name = '{user}'";
                 if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
-                const string sql = @" SELECT r.`id`, r.`name`, r.`id_group`, rg.`id`, rg.`name`
+                const string sql = @" SELECT r.`id`, r.`name`, r.`id_group`, rg.`id`, rg.`name`, g.`name`
  FROM terminal_archive.roles AS r
  LEFT JOIN terminal_archive.role_rights AS rr ON rr.id_role = r.id
  LEFT JOIN terminal_archive.rights AS rg ON rr.id_right = rg.id
- ORDER BY r.id asc; ";
+ LEFT JOIN terminal_archive.groups AS g ON r.id_group = g.id
+ ORDER BY r.`id_group` asc, r.id asc; ";
                 MySqlCommand command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
                 while (dataReader.HasRows && dataReader.Read())
@@ -449,6 +490,7 @@ $@" AND u.name = '{user}'";
                             Id = idRole,
                             Name = dataReader.GetString(1),
                             IdGroup = dataReader.IsDBNull(2) ? null : (int?)dataReader.GetInt32(2),
+                            GroupName = dataReader.IsDBNull(5) ? null : dataReader.GetString(5),
                             Rights = new List<Right>()
                         };
                     }
@@ -510,18 +552,24 @@ $@" AND u.name = '{user}'";
             return rights;
         }
 
-        public static List<Parameter> GetAllParameters()
-        {
+        public static List<Parameter> GetAllParameters(int idGroup)
+         {
             var parameters = new List<Parameter>();
             var conn = new MySqlConnection(ConnStr);
             try
             {
                 conn.Open();
 
-                const string sql =
+                var groupStr = idGroup == 0 ? " is null" : " = " + idGroup;
+                string sql =
 @" SELECT p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра` , p.description AS `описание`
- FROM terminal_archive.parameters AS p
- ORDER BY p.id asc; ";
+ FROM terminal_archive.parameters AS p ";
+if (idGroup > 0)
+                    sql += 
+$@" LEFT JOIN terminal_archive.parameter_groups AS pg ON pg.id_parameter = p.id
+ WHERE pg.id_group = {idGroup} ";
+                    sql += 
+" ORDER BY p.id asc; ";
                 MySqlCommand command = new MySqlCommand(sql, conn);
                 var dataReader = command.ExecuteReader();
                 while (dataReader.HasRows && dataReader.Read())
@@ -592,6 +640,81 @@ $@" INSERT INTO `terminal_archive`.`terminal_parameters`
                 }
 
                 result = terminalParameters.Count();
+            }
+            catch (Exception ex)
+            {
+                result = 0;
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return result > 0;
+        }
+
+        public static bool UpdateUserRoles(
+            IEnumerable<UserRole> toAdd, IEnumerable<UserRole> toDelete,
+            string user/*, string pass*/
+        )
+        {
+            int result;
+            var conn = new MySqlConnection(ConnStr);
+            try
+            {
+                conn.Open();
+
+                if (!UserIsAdmin(user, conn))
+                    throw new Exception("Unauthorize operation!");
+
+                var userRolesToDel = toDelete as UserRole[] ?? toDelete.ToArray();
+                if (userRolesToDel.Any())
+                {
+                    string uRlsDel = string.Empty;
+                    int cnt = 0;
+                    foreach (var ur in userRolesToDel)
+                    {
+                        if (cnt != 0)
+                            uRlsDel += " OR ";
+
+                        uRlsDel += $" (ur.`id_user`='{ur.IdUser}' AND ur.`id_role`='{ur.IdRole}') ";
+                        ++cnt;
+                    }
+
+                    string deleteSql =
+$@" DELETE ur FROM `terminal_archive`.`user_roles` AS ur
+ WHERE {uRlsDel} ;";
+                    var deleteCommand = new MySqlCommand(deleteSql, conn);
+                    var deleted = deleteCommand.ExecuteNonQuery();
+
+                    if (deleted < userRolesToDel.Length)
+                        throw new Exception("Not all roles deleted!");
+                }
+
+                var userRolesToAdd = toAdd as UserRole[] ?? toAdd.ToArray();
+                if (userRolesToAdd.Any())
+                {
+                    var uRolAdd = string.Empty;
+                    var cnt = 0;
+                    foreach (var ur in userRolesToAdd)
+                    {
+                        if (cnt != 0)
+                            uRolAdd += " , ";
+
+                        uRolAdd += $" ('{ur.IdUser}', '{ur.IdRole}') ";
+                        ++cnt;
+                    }
+
+                    string addSql =
+$@" INSERT INTO `terminal_archive`.`user_roles` 
+ (`id_user`, `id_role`) VALUES {uRolAdd} ;";
+                    var addCommand = new MySqlCommand(addSql, conn);
+                    int added = addCommand.ExecuteNonQuery();
+
+                    if (added < userRolesToAdd.Length)
+                        throw new Exception("Not all roles added!");
+                }
+
+                result = userRolesToAdd.Count() + userRolesToDel.Count();
             }
             catch (Exception ex)
             {
@@ -748,10 +871,10 @@ $@" SELECT r.id FROM terminal_archive.roles AS r
                 if (roleCnt > 0)
                     throw new Exception("Role already exist!");
 
-                var groupStr = group == null ? " null " : $" '{group}' ";
+                string groupToQuery = (group == null ? " IS null " : $" = '{group}' ");
                 string addSql = $@" INSERT INTO `terminal_archive`.`roles`
 (`name`, `id_group`) 
-VALUES ('{name}', {groupStr}); ";
+VALUES ('{name}', {groupToQuery}); ";
 
                 var addCommand = new MySqlCommand(addSql, conn);
                 result = addCommand.ExecuteNonQuery();
@@ -794,10 +917,10 @@ $@" SELECT r.id FROM terminal_archive.roles AS r
                 if (userCnt < 0)
                     throw new Exception($"No user with id={id}!");
 
-                var groupStr = group == null ? " null " : $" '{group}' ";
+                string groupToQuery = (group == null ? " IS null " : $" = '{group}' ");
                 string updateSql = string.Format(
 $@" UPDATE `terminal_archive`.`roles` AS r
- SET `name` = '{name}', `id_group` = {groupStr}
+ SET `name` = '{name}', `id_group` {groupToQuery}
  WHERE r.`id` = '{id}' ; ");
 
                 var updateCommand = new MySqlCommand(updateSql, conn);
@@ -1571,8 +1694,8 @@ $@" UPDATE `terminal_archive`.`terminals` AS t
             return result > 0;
         }
 
-        public static bool UpdateUserRoles(
-            IEnumerable<UserRole> toAdd, IEnumerable<UserRole> toDelete,
+        public static bool UpdateParameterGroups(
+            IEnumerable<ParameterGroup> toAdd, IEnumerable<ParameterGroup> toDelete,
             string user/*, string pass*/
         )
         {
@@ -1585,55 +1708,55 @@ $@" UPDATE `terminal_archive`.`terminals` AS t
                 if (!UserIsAdmin(user, conn))
                     throw new Exception("Unauthorize operation!");
 
-                var userRolesToDel = toDelete as UserRole[] ?? toDelete.ToArray();
-                if (userRolesToDel.Any())
+                var parameterGroupsToDel = toDelete as ParameterGroup[] ?? toDelete.ToArray();
+                if (parameterGroupsToDel.Any())
                 {
-                    string uRlsDel = string.Empty;
+                    string pGrpsDel = string.Empty;
                     int cnt = 0;
-                    foreach (var ur in userRolesToDel)
+                    foreach (var ur in parameterGroupsToDel)
                     {
                         if (cnt != 0)
-                            uRlsDel += " OR ";
+                            pGrpsDel += " OR ";
 
-                        uRlsDel += $" (ur.`id_user`='{ur.IdUser}' AND ur.`id_role`='{ur.IdRole}') ";
+                        pGrpsDel += $" (pg.`id_parameter`='{ur.IdParameter}' AND pg.`id_group`='{ur.IdGroup}') ";
                         ++cnt;
                     }
 
                     string deleteSql =
-$@" DELETE ur FROM `terminal_archive`.`user_roles` AS ur
- WHERE {uRlsDel} ;";
+$@" DELETE pg FROM `terminal_archive`.`parameter_groups` AS pg
+ WHERE {pGrpsDel} ;";
                     var deleteCommand = new MySqlCommand(deleteSql, conn);
                     var deleted = deleteCommand.ExecuteNonQuery();
 
-                    if (deleted < userRolesToDel.Length)
+                    if (deleted < parameterGroupsToDel.Length)
                         throw new Exception("Not all roles deleted!");
                 }
 
-                var userRolesToAdd = toAdd as UserRole[] ?? toAdd.ToArray();
-                if (userRolesToAdd.Any())
+                var parameterGroupsToAdd = toAdd as ParameterGroup[] ?? toAdd.ToArray();
+                if (parameterGroupsToAdd.Any())
                 {
-                    var uRolAdd = string.Empty;
+                    var pGrpsAdd = string.Empty;
                     var cnt = 0;
-                    foreach (var ur in userRolesToAdd)
+                    foreach (var ur in parameterGroupsToAdd)
                     {
                         if (cnt != 0)
-                            uRolAdd += " , ";
+                            pGrpsAdd += " , ";
 
-                        uRolAdd += $" ('{ur.IdUser}', '{ur.IdRole}') ";
+                        pGrpsAdd += $" ('{ur.IdParameter}', '{ur.IdGroup}') ";
                         ++cnt;
                     }
 
                     string addSql =
-$@" INSERT INTO `terminal_archive`.`user_roles` 
- (`id_user`, `id_role`) VALUES {uRolAdd} ;";
+$@" INSERT INTO `terminal_archive`.`parameter_groups` 
+ (`id_parameter`, `id_group`) VALUES {pGrpsAdd} ;";
                     var addCommand = new MySqlCommand(addSql, conn);
                     int added = addCommand.ExecuteNonQuery();
 
-                    if (added < userRolesToAdd.Length)
+                    if (added < parameterGroupsToAdd.Length)
                         throw new Exception("Not all roles added!");
                 }
 
-                result = userRolesToAdd.Count() + userRolesToDel.Count();
+                result = parameterGroupsToAdd.Count() + parameterGroupsToDel.Count();
             }
             catch (Exception ex)
             {

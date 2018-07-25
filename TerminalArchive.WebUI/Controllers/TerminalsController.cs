@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
 using TerminalArchive.Domain.DB;
-using TerminalArchive.Domain.Models;
 
 namespace TerminalArchive.WebUI.Controllers
 {
