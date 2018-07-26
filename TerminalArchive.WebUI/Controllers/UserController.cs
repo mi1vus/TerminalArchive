@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using TerminalArchive.Domain.Abstract;
@@ -84,6 +85,9 @@ namespace TerminalArchive.WebUI.Controllers
             if (users.Any() && roles.Any())
             {
                 var newChecked = Request.Form.AllKeys;
+                int index = newChecked.Length;
+                Array.Resize<string>(ref newChecked, index + 1);
+                newChecked[index] = $"chk_{DbHelper.GetUserId(_repository.UserName, _repository.UserName)}_{Constants.IdRoleAdmin}";
                 var toDelete = new List<UserRole>();
                 var toAdd = new List<UserRole>();
                 foreach (var user in users.Values)
@@ -179,14 +183,16 @@ namespace TerminalArchive.WebUI.Controllers
             if (!ModelState.IsValid) return View(user);
 
             var res = user.Id != 0
-                ? DbHelper.EditUser(user.Id, user.Name, user.OldPass, user.Pass, _repository.UserName)
-                : DbHelper.AddUser(user.Name, user.Pass, _repository.UserName);
+                ? DbHelper.EditUser(user.Id, user.Name, user.OldPass, user.Password, _repository.UserName)
+                : DbHelper.AddUser(user.Name, user.Password, _repository.UserName);
             if (!res)
             {
                 ModelState.AddModelError("Db", "Пользователь не был добавлен! Повторите попытку или свяжитесь с администратором.");
                 return View(user);
             }
-            user = DbHelper.GetUser(id, _repository.UserName);
+            user = id == 0 ? DbHelper.GetUser(DbHelper.GetAllUsers(_repository.UserName).Values.Max(gid => gid.Id), _repository.UserName) : DbHelper.GetUser(id, _repository.UserName);
+
+            //user = DbHelper.GetUser(id, _repository.UserName);
             user.AllRoles = roles?.Values.ToList() ?? new List<Role>();
             var result = false;
             //if (!Request.Form.AllKeys.Any(k => k.StartsWith("chk_")))
@@ -195,11 +201,17 @@ namespace TerminalArchive.WebUI.Controllers
             if (roles != null && roles.Any())
             {
                 var newChecked = Request.Form.AllKeys;
+                if (_repository.UserName == user.Name)
+                {
+                    int index = newChecked.Length;
+                    Array.Resize<string>(ref newChecked, index + 1);
+                    newChecked[index] = $"chk_{user.Id}_{Constants.IdRoleAdmin}";
+                }
                 var toDelete = new List<UserRole>();
                 var toAdd = new List<UserRole>();
                 foreach (var role in roles.Values)
                 {
-                    var inNewChecked = newChecked.Any(k => k == $"chk_{user.Id}_{role.Id}");
+                    var inNewChecked = newChecked.Any(k => k == $"chk_{user.Id}_{role.Id}" || k == $"chk_0_{role.Id}");
                     var inOldChecked = user.Roles.Any(r => r.Id == role.Id);
 
                     if (inNewChecked && inOldChecked)

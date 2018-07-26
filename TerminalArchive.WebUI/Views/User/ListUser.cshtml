@@ -20,7 +20,7 @@
             @Html.DisplayNameFor(model => model.Name)
         </th>
         @*<th>
-            @Html.DisplayNameFor(model => model.Pass)
+            @Html.DisplayNameFor(model => model.Password)
         </th>*@
         <th>Редактировать</th>
     </tr>
@@ -31,7 +31,7 @@
             @Html.DisplayFor(modelItem => item.Name)
         </td>
         @*<td>
-            @Html.DisplayFor(modelItem => item.Pass)
+            @Html.DisplayFor(modelItem => item.Password)
         </td>*@
         <td>
             @Html.ActionLink("Редактировать", "AddOrEdit", new { id=item.Id },

@@ -1,4 +1,5 @@
-﻿@model TerminalArchive.WebUI.Models.UserRolesViewModel
+﻿@using TerminalArchive.Domain.DB
+@model TerminalArchive.WebUI.Models.UserRolesViewModel
 
 @{
     ViewBag.Title = "UserRoles";
@@ -74,7 +75,8 @@
                            id="chk_@user.Id.ToString()_@role.Id.ToString()"
                            name="chk_@user.Id.ToString()_@role.Id.ToString()"
                            value="@(user.Roles.Any(r => r.Id == role.Id) ? "true" : "false")"
-                           @(user.Roles.Any(r => r.Id == role.Id) ? "checked" : "") />
+                           @(user.Roles.Any(r => r.Id == role.Id) ? "checked" : "") 
+                           @(user.Name ==  User?.Identity?.Name && role.Id == Constants.IdRoleAdmin ? "disabled=\"disabled\"" : "")/>
                 </td>
                 }
             </tr>

@@ -8,6 +8,15 @@ using TerminalArchive.Domain.Models;
 
 namespace TerminalArchive.Domain.DB
 {
+    public static class Constants
+    {
+        public static int IdRoleAdmin { get; set; } = 1;
+        public static string RightReadName { get; set; } = "Read";
+        public static string RightWriteName { get; set; } = "Write";
+        public static string RightBannedName { get; set; } = "None";
+    }
+
+
     public static class DbHelper
     {
         // строка подключения к БД
@@ -180,14 +189,14 @@ $@" SELECT MIN(rg.name not like 'None') FROM terminal_archive.users AS u
             if (string.IsNullOrEmpty(name))
                 return result;
 
-            //var groups = GetUserGroups(name, "Read", contextConn);
-            //groups.AddRange(GetUserGroups(name, "Write", contextConn));
+            //var groups = GetUserGroups(name, Constants.RightReadName, contextConn);
+            //groups.AddRange(GetUserGroups(name, Constants.RightWriteName, contextConn));
             var conn = contextConn ?? new MySqlConnection(ConnStr);
             if (contextConn == null)
                 conn.Open();
             try
             {
-                if (UserInRole(name, "Write", null, contextConn) && UserInRole(name, "Read", null, conn)
+                if (UserInRole(name, Constants.RightWriteName, null, contextConn) && UserInRole(name, Constants.RightReadName, null, conn)
                     /*|| (groups != null && groups.Any())*/)
                     result = true;
             }
@@ -270,7 +279,7 @@ WHERE u.name = '{name}' AND rg.name = '{right}'; ";
             {
                 conn.Open();
 
-                var groups = GetUserGroups(user, "Read", conn);
+                var groups = GetUserGroups(user, Constants.RightReadName, conn);
 
                 string sql =
 @" SELECT g.`id`, g.name, p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра`
@@ -431,7 +440,7 @@ $@" AND u.name = '{user}'";
             return res;
         }
 
-        public static int GetUsersId(string name, string user)
+        public static int GetUserId(string name, string user)
         {
             var userId = 0;
             var conn = new MySqlConnection(ConnStr);
@@ -603,7 +612,7 @@ $@" LEFT JOIN terminal_archive.parameter_groups AS pg ON pg.id_parameter = p.id
             {
                 conn.Open();
 
-                var groups = GetUserGroups(user, "Write");
+                var groups = GetUserGroups(user, Constants.RightWriteName);
                 if (!UserIsAdmin(user, conn) && groups == null)
                     return false;
 
@@ -1036,7 +1045,7 @@ $@" UPDATE `terminal_archive`.`groups` AS g
             {
                 conn.Open();
 
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
                 var sql = " SELECT COUNT(t.id) FROM terminal_archive.terminals AS t ";
                 if (groups != null && groups.Any())
                 {
@@ -1078,7 +1087,7 @@ $@" WHERE t.id_group in ( {groupStr} ); ";
             try
             {
                 conn.Open();
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
                 var sql =
 @" SELECT COUNT(id) FROM terminal_archive.orders AS o ";
                 if (groups != null && groups.Any())
@@ -1126,7 +1135,7 @@ $@" WHERE o.id_terminal = {idTerminal} ";
             {
                 conn.Open();
 
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
 
                 var sql =
 @" SELECT t.`id`, g.`id`, g.`name`, t.`name`, t.`address` , t.`id_hasp`
@@ -1199,7 +1208,7 @@ $@" WHERE t.id_group in ( {groupStr} ) ";
             {
                 conn.Open();
 
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
 
                 var sql =
 $@" SELECT t.`id`, g.`id`, g.`name`, t.`name`, t.`address` , t.`id_hasp`
@@ -1269,7 +1278,7 @@ $@" AND t.id_group in ( {groupStr} ) ";
             {
                 conn.Open();
 
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
                 var sql =
                     @" SELECT o.`id`, `RNN`, s.id, s.name AS `состояние`, t.id, t.`name` AS `терминал` ,
  d.id, d.description AS `доп. параметр`, od.value AS `значение`,
@@ -1359,7 +1368,7 @@ $@" ORDER BY o.id desc LIMIT {(currentPageOrder - 1) * pageSize},{pageSize};";
             {
                 conn.Open();
 
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
                 string sql =
 $@" SELECT p.id AS `id параметра`, p.name AS `имя параметра`, p.path AS `путь параметра` ,tp.value AS `значение параметра`, 
  tp.last_edit_date, tp.save_date, p.`description`
@@ -1425,7 +1434,7 @@ $@" ORDER BY p.id desc;";
             try
             {
                 conn.Open();
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
 
                 var sql =
 @" SELECT COUNT(h.id)  FROM `terminal_archive`.`history` AS h ";
@@ -1476,7 +1485,7 @@ $@" WHERE h.id_terminal = {idTerminal} ";
             {
                 conn.Open();
 
-                var groups = GetUserGroups(userName, "Read", conn);
+                var groups = GetUserGroups(userName, Constants.RightReadName, conn);
                 var sql =
 @" SELECT h.`id`, h.`date`, h.`id_terminal`, t.`name`, h.`id_order`, o.`RNN`, h.`id_state`, s.`name`, h.`trace`, h.`msg`
  FROM `terminal_archive`.`history` AS h

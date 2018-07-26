@@ -74,7 +74,7 @@ namespace TerminalArchive.WebUI.Controllers
         {
             _repository.UserName = User?.Identity?.Name;
 
-            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
+            var groups = DbHelper.GetUserGroups(_repository.UserName, Constants.RightReadName);
             var terminal = _repository.GetTerminal(id, page, PageSize);
             if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
                 return View("Unauthorize");
@@ -120,7 +120,7 @@ namespace TerminalArchive.WebUI.Controllers
          {
             _repository.UserName = User?.Identity?.Name;
 
-            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
+            var groups = DbHelper.GetUserGroups(_repository.UserName, Constants.RightReadName);
             var terminal = _repository.GetTerminal(id);
             if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
                 return View("Unauthorize");
@@ -149,8 +149,8 @@ namespace TerminalArchive.WebUI.Controllers
 
             ViewBag.CanEdit = 
                 DbHelper.UserIsAdmin(User?.Identity?.Name)
-                || DbHelper.UserInRole(User?.Identity?.Name,"Write", terminal.IdGroup)
-                || DbHelper.UserInRole(User?.Identity?.Name, "Write", null);
+                || DbHelper.UserInRole(User?.Identity?.Name,Constants.RightWriteName, terminal.IdGroup)
+                || DbHelper.UserInRole(User?.Identity?.Name, Constants.RightWriteName, null);
             return View(terminalsModel);
         }
 
@@ -160,7 +160,7 @@ namespace TerminalArchive.WebUI.Controllers
         {
             _repository.UserName = User?.Identity?.Name;
 
-            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
+            var groups = DbHelper.GetUserGroups(_repository.UserName, Constants.RightReadName);
             var terminal = _repository.GetTerminal(id);
             if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
                 return View("Unauthorize");
@@ -282,8 +282,8 @@ namespace TerminalArchive.WebUI.Controllers
             };
             ViewBag.CanEdit =
                 DbHelper.UserIsAdmin(User?.Identity?.Name)
-                || DbHelper.UserInRole(User?.Identity?.Name, "Write", terminal.IdGroup)
-                || DbHelper.UserInRole(User?.Identity?.Name, "Write", null);
+                || DbHelper.UserInRole(User?.Identity?.Name, Constants.RightWriteName, terminal.IdGroup)
+                || DbHelper.UserInRole(User?.Identity?.Name, Constants.RightWriteName, null);
 
             return View(terminalsModel);
         }
@@ -439,7 +439,7 @@ namespace TerminalArchive.WebUI.Controllers
             }
 
             var groups = DbHelper.GetAllGroups(_repository.UserName);
-            group = groups.Values.Single(g => g.Id == id);
+            @group = id == 0 ? groups.Values.Single(g => g.Id == groups.Values.Max(gid => gid.Id)) : groups.Values.Single(g => g.Id == id);
             group.AllParameters = allParameters ?? new List<Parameter>();
             var result = false;
 
@@ -450,7 +450,7 @@ namespace TerminalArchive.WebUI.Controllers
                 var toAdd = new List<ParameterGroup>();
                 foreach (var parameter in allParameters)
                 {
-                    var inNewChecked = newChecked.Any(k => k == $"chk_{parameter.Id}_{group.Id}");
+                    var inNewChecked = newChecked.Any(k => k == $"chk_{parameter.Id}_{group.Id}" || k == $"chk_{parameter.Id}_0");
                     var inOldChecked = group.Parameters.Any(p => p.Id == parameter.Id);
 
                     if (inNewChecked && inOldChecked)

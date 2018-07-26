@@ -31,7 +31,7 @@ namespace TerminalArchive.WebUI.Controllers
         {
             _repository.UserName = User?.Identity?.Name;
 
-            var groups = DbHelper.GetUserGroups(_repository.UserName, "Read");
+            var groups = DbHelper.GetUserGroups(_repository.UserName, Constants.RightReadName);
             var terminal = _repository.GetTerminal(id);
             if (groups == null || terminal == null || (groups.Any() && groups.All(g => g.Id != terminal.IdGroup)))
                 return View("Unauthorize");

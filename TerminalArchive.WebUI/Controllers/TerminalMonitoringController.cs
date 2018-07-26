@@ -41,7 +41,7 @@ namespace TerminalArchive.WebUI.Controllers
                 }
             };
 
-            //if (!DbHelper.UserInRole(_repository.UserName, "Read", null))
+            //if (!DbHelper.UserInRole(_repository.UserName, Constants.RightReadName, null))
             //    return View(terminalsModel);
 
             int maxPages;

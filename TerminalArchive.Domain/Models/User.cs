@@ -5,13 +5,27 @@ namespace TerminalArchive.Domain.Models
 {
     public class User
     {
+        public User()
+        {
+            Roles = new List<Role>();
+        }
+
         public int Id { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите имя пользователя!")]
         [Display(Name = "Имя")]
         public string Name { get; set; }
         [Required(ErrorMessage = "Пожалуйста введите пароль пользователя!")]
+        [DataType(DataType.Password)]
         [Display(Name = "Пароль")]
-        public string Pass { get; set; }
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "Пожалуйста введите повторный пароль пользователя!")]
+        [DataType(DataType.Password)]
+        [Compare("Password")]
+        [Display(Name = "Повторный пароль")]
+        public string ControlPassword { set; get; }
+
+        [DataType(DataType.Password)]
         [Display(Name = "Старый пароль")]
         public string OldPass { get; set; }
         [Display(Name = "Роли")]

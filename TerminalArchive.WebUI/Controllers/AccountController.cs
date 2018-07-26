@@ -52,7 +52,7 @@ namespace TerminalArchive.WebUI.Controllers
             else
             if (Request.Form["submitbutton"] != null && Request.Form["submitbutton"] == "Сменить пароль")
             {
-                var userId = DbHelper.GetUsersId(User?.Identity?.Name, User?.Identity?.Name);
+                var userId = DbHelper.GetUserId(User?.Identity?.Name, User?.Identity?.Name);
                 return Redirect(Url.Action("AddOrEdit", "User", new {id = userId }));
             }
 

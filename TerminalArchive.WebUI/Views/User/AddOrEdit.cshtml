@@ -27,30 +27,30 @@
             </div>
         </div>
         
-        @if(string.IsNullOrEmpty(Model.Pass))
+        @if(string.IsNullOrEmpty(Model.Password))
         { 
             <div class="form-group">
-                @Html.LabelFor(model => model.Pass, htmlAttributes: new { @class = "control-label col-md-2" })
+                @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "control-label col-md-2" })
                 <div class="col-md-10">
-                    @Html.EditorFor(model => model.Pass, new { htmlAttributes = new { @class = "form-control" } })
-                    @Html.ValidationMessageFor(model => model.Pass, "", new { @class = "text-danger" })
+                    @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
                 </div>
             </div>
         }
         else
         {
             <div class="form-group">
-                @Html.LabelFor(model => model.Pass, htmlAttributes: new { @class = "control-label col-md-2" })
+                @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "control-label col-md-2" })
                 <div class="col-md-10">
-                    @Html.EditorFor(model => model.Pass, new { htmlAttributes = new { @class = "form-control" } })
-                    @Html.ValidationMessageFor(model => model.Pass, "", new { @class = "text-danger" })
+                    @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
                 </div>
             </div>
             <div class="form-group">
-                @Html.LabelFor(model => model.Pass, htmlAttributes: new { @class = "control-label col-md-2" })
+                @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "control-label col-md-2" })
                 <div class="col-md-10">
-                    @Html.EditorFor(model => model.Pass, new { htmlAttributes = new { @class = "form-control" } })
-                    @Html.ValidationMessageFor(model => model.Pass, "", new { @class = "text-danger" })
+                    @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
                 </div>
             </div>
         }*@
@@ -61,19 +61,9 @@
             {
                 @Html.Hidden(property.PropertyName)
             }
-            else if (property.PropertyName == "Pass")
+            else if (property.PropertyName == "Password")
             {
-                if (string.IsNullOrEmpty(Model.Name) || DbHelper.UserIsAdmin(User?.Identity?.Name))
-                {
-                    <div class="form-group">
-                        <label>@(property.DisplayName ?? property.PropertyName)</label>
-                        <div class="col-md-10">
-                            @Html.Password(property.PropertyName, null, new {@class = "form-control"})
-                            @Html.ValidationMessage(property.PropertyName, "", new {@class = "text-danger"})
-                        </div>
-                    </div>
-                }
-                else
+                if (!string.IsNullOrEmpty(Model.Name) && !DbHelper.UserIsAdmin(User?.Identity?.Name))
                 {
                     <div class="form-group">
                         @Html.LabelFor(model => model.OldPass, htmlAttributes: new {@class = "control-label col-md-2"})
@@ -82,14 +72,26 @@
                             @Html.ValidationMessageFor(model => model.OldPass, "", new {@class = "text-danger"})
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>@(property.DisplayName ?? property.PropertyName)</label>
-                        <div class="col-md-10">
-                            @Html.Password(property.PropertyName, null, new {@class = "form-control"})
-                            @Html.ValidationMessage(property.PropertyName, "", new {@class = "text-danger"})
-                        </div>
-                    </div>
+
                 }
+                
+                <div class="form-group">
+                    <label>@(property.DisplayName ?? property.PropertyName)</label>
+                    <div class="col-md-10">
+                        @Html.Password(property.PropertyName, null, new { @class = "form-control" })
+                        @Html.ValidationMessage(property.PropertyName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            }
+            else if (property.PropertyName == "ControlPassword")
+            {
+                <div class="form-group">
+                    <label>@(property.DisplayName ?? property.PropertyName)</label>
+                    <div class="col-md-10">
+                        @Html.Password(property.PropertyName, null, new { @class = "form-control" })
+                        @Html.ValidationMessage(property.PropertyName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
             }
             else if (property.PropertyName == "Roles")
             {
@@ -110,7 +112,9 @@
                                                id="chk_@Model.Id.ToString()_@role.Id.ToString()"
                                                name="chk_@Model.Id.ToString()_@role.Id.ToString()"
                                                value="@(Model.Roles != null && Model.Roles.Any(r => r.Id == role.Id) ? "true" : "false")"
-                                               @(Model.Roles != null && Model.Roles.Any(r => r.Id == role.Id) ? "checked" : "")/>
+                                               @(Model.Roles != null && Model.Roles.Any(r => r.Id == role.Id) ? "checked" : "")
+                                               @(Model.Name ==  User?.Identity?.Name && role.Id == Constants.IdRoleAdmin ? "disabled=\"disabled\"" : "")
+                                               />
                                     </td>
                                 </tr>
                             }
